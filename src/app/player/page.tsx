@@ -799,7 +799,7 @@ export default function PlayerView() {
                 ×
               </button>
             </div>
-            
+
             {/* Summary Stats */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
               <div className="bg-gradient-to-br from-green-100 to-green-200 rounded-xl p-4 text-center">
@@ -827,7 +827,8 @@ export default function PlayerView() {
                     {player.deedCards?.length || 0}
                   </div>
                   <div className="text-sm text-gray-600 truncate">
-                    {player.name} {player.id === currentPlayer.id ? "(You)" : ""}
+                    {player.name}{" "}
+                    {player.id === currentPlayer.id ? "(You)" : ""}
                   </div>
                 </div>
               ))}
@@ -838,10 +839,10 @@ export default function PlayerView() {
               {DEED_CARDS.map((card) => {
                 // Find owner of this deed
                 const owner = gameState.players.find((p) =>
-                  p.deedCards?.some((d) => d.id === card.id)
+                  p.deedCards?.some((d) => d.id === card.id),
                 );
                 const isAvailable = gameState.availableDeeds?.some(
-                  (d) => d.id === card.id
+                  (d) => d.id === card.id,
                 );
                 const isOwnedByMe = owner?.id === currentPlayer.id;
 
@@ -852,8 +853,8 @@ export default function PlayerView() {
                       isOwnedByMe
                         ? "bg-gradient-to-br from-blue-50 to-blue-100 border-blue-300"
                         : isAvailable
-                        ? "bg-gradient-to-br from-green-50 to-green-100 border-green-300"
-                        : "bg-gradient-to-br from-gray-50 to-gray-100 border-gray-300"
+                          ? "bg-gradient-to-br from-green-50 to-green-100 border-green-300"
+                          : "bg-gradient-to-br from-gray-50 to-gray-100 border-gray-300"
                     }`}
                   >
                     <div className="flex justify-between items-start mb-2">

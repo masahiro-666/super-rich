@@ -85,6 +85,10 @@ export default function Host() {
       setDeedCardsPerPlayer(gameState.settings?.deedCardsPerPlayer || 2);
     });
 
+    socket.on("deed-request-created", ({ gameState }) => {
+      setGameState(gameState);
+    });
+
     socket.on("error", ({ message }) => {
       console.error("Socket error:", message);
 
@@ -110,6 +114,8 @@ export default function Host() {
         socket.off("player-left");
         socket.off("game-updated");
         socket.off("game-started");
+        socket.off("settings-updated");
+        socket.off("deed-request-created");
         socket.off("error");
       }
     };
