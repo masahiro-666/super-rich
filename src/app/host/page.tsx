@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { io, Socket } from "socket.io-client";
 import { GameState } from "@/types/game";
 import { INITIAL_MONEY, MONEY_BREAKDOWN, DEED_CARDS } from "@/types/game";
+import QRCode from "qrcode";
+import Image from "next/image";
 
 let socket: Socket;
 
@@ -39,6 +41,8 @@ export default function Host() {
     type: "send" | "receive";
   } | null>(null);
   const [amountHistory, setAmountHistory] = useState<number[]>([]);
+  const [showQRCode, setShowQRCode] = useState(false);
+  const [qrCodeDataUrl, setQrCodeDataUrl] = useState("");
 
   useEffect(() => {
     const role = localStorage.getItem("monopoly-role");
@@ -47,6 +51,19 @@ export default function Host() {
     if (role !== "host" || !savedRoomCode) {
       router.push("/lobby");
       return;
+    }
+
+    // Generate QR code
+    if (savedRoomCode && typeof window !== "undefined") {
+      const joinUrl = `${window.location.origin}/lobby?room=${savedRoomCode}`;
+      QRCode.toDataURL(joinUrl, {
+        width: 300,
+        margin: 2,
+        color: {
+          dark: "#059669",
+          light: "#FFFFFF"
+        }
+      }).then(setQrCodeDataUrl).catch(console.error);
     }
 
     setRoomCode(savedRoomCode);
@@ -268,19 +285,28 @@ export default function Host() {
                     </p>
                   </div>
                 )}
-                <div className="relative">
+                <div className="flex gap-2">
+                  <div className="relative">
+                    <button
+                      onClick={handleCopyRoomCode}
+                      className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-semibold text-sm transition-colors flex items-center gap-2"
+                      title="Copy room code"
+                    >
+                      📋 Copy
+                    </button>
+                    {showCopyTooltip && (
+                      <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 bg-gray-800 text-white px-3 py-1 rounded text-sm whitespace-nowrap animate-fade-in">
+                        Copied!
+                      </div>
+                    )}
+                  </div>
                   <button
-                    onClick={handleCopyRoomCode}
-                    className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-semibold text-sm transition-colors flex items-center gap-2"
-                    title="Copy room code"
+                    onClick={() => setShowQRCode(true)}
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold text-sm transition-colors flex items-center gap-2"
+                    title="Show QR Code"
                   >
-                    📋 Copy
+                    📱 QR Code
                   </button>
-                  {showCopyTooltip && (
-                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 bg-gray-800 text-white px-3 py-1 rounded text-sm whitespace-nowrap animate-fade-in">
-                      Copied!
-                    </div>
-                  )}
                 </div>
               </div>
             </div>
@@ -1219,6 +1245,62 @@ export default function Host() {
                 Confirm Give
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* QR Code Modal */}
+      {showQRCode && (
+        <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center p-4 z-50 animate-fade-in">
+          <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full text-center animate-scale-in">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-3xl font-bold text-gray-800">
+                📱 Join Room
+              </h2>
+              <button
+                onClick={() => setShowQRCode(false)}
+                className="text-gray-500 hover:text-gray-700 text-3xl"
+              >
+                ×
+              </button>
+            </div>
+            
+            <div className="mb-6">
+              <p className="text-gray-600 mb-4">
+                Scan this QR code to join the room:
+              </p>
+              <div className="bg-white p-4 rounded-xl inline-block border-4 border-green-500">
+                {qrCodeDataUrl && (
+                  <Image
+                    src={qrCodeDataUrl}
+                    alt="QR Code"
+                    width={256}
+                    height={256}
+                    className="w-64 h-64"
+                  />
+                )}
+              </div>
+            </div>
+
+            <div className="bg-green-50 border-2 border-green-300 rounded-xl p-4 mb-6">
+              <p className="text-sm text-gray-700 mb-2">
+                Room Code:
+              </p>
+              <p className="font-mono text-3xl font-bold text-green-600">
+                {roomCode}
+              </p>
+            </div>
+
+            <p className="text-sm text-gray-500 mb-6">
+              Players only need to enter their name to join!
+            </p>
+
+            <button
+              onClick={() => setShowQRCode(false)}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-xl transition-colors"
+            >
+              Close
+            </button>
           </div>
         </div>
       )}

@@ -1,16 +1,21 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { io, Socket } from "socket.io-client";
 
 let socket: Socket;
 
 export default function Lobby() {
   const router = useRouter();
-  const [mode, setMode] = useState<"select" | "create" | "join">("select");
+  const searchParams = useSearchParams();
+  const roomParam = searchParams?.get("room");
+  
+  const [mode, setMode] = useState<"select" | "create" | "join">(
+    roomParam ? "join" : "select"
+  );
   const [hostName, setHostName] = useState("");
-  const [roomCode, setRoomCode] = useState("");
+  const [roomCode, setRoomCode] = useState(roomParam?.toUpperCase() || "");
   const [playerName, setPlayerName] = useState("");
   const [error, setError] = useState("");
   const [isJoining, setIsJoining] = useState(false);
@@ -226,6 +231,7 @@ export default function Lobby() {
         <button
           onClick={() => {
             setMode("select");
+            setRoomCode("");
             setError("");
           }}
           className="mb-4 text-gray-600 hover:text-gray-800"
@@ -236,9 +242,20 @@ export default function Lobby() {
         <h1 className="text-3xl font-bold text-center mb-2 text-gray-800">
           Join Game
         </h1>
-        <p className="text-center text-gray-600 mb-6">
-          Enter the room code to join
-        </p>
+        {roomCode ? (
+          <div className="bg-green-50 border-2 border-green-300 rounded-xl p-4 mb-6">
+            <p className="text-sm text-gray-600 text-center mb-2">
+              Joining Room:
+            </p>
+            <p className="font-mono text-3xl font-bold text-green-600 text-center">
+              {roomCode}
+            </p>
+          </div>
+        ) : (
+          <p className="text-center text-gray-600 mb-6">
+            Enter the room code to join
+          </p>
+        )}
 
         {error && (
           <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg">
@@ -268,10 +285,16 @@ export default function Lobby() {
               type="text"
               value={roomCode}
               onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
-              className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none text-gray-800 text-center text-2xl font-mono tracking-wider uppercase"
+              className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none text-gray-800 text-center text-2xl font-mono tracking-wider uppercase disabled:bg-gray-100"
               placeholder="XXXXXX"
               maxLength={6}
+              disabled={!!roomParam}
             />
+            {roomParam && (
+              <p className="text-xs text-gray-500 mt-1 text-center">
+                Room code from QR code
+              </p>
+            )}
           </div>
 
           <button
