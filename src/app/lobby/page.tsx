@@ -14,6 +14,8 @@ export default function Lobby() {
   const [playerName, setPlayerName] = useState("");
   const [error, setError] = useState("");
   const [isJoining, setIsJoining] = useState(false);
+  const [startingMoney, setStartingMoney] = useState(15000);
+  const [deedCardsPerPlayer, setDeedCardsPerPlayer] = useState(2);
 
   const initSocket = () => {
     if (!socket) {
@@ -26,7 +28,13 @@ export default function Lobby() {
     const socket = initSocket();
 
     const bankerName = "Banker";
-    socket.emit("create-game", { hostName: bankerName });
+    socket.emit("create-game", { 
+      hostName: bankerName,
+      settings: {
+        startingMoney,
+        deedCardsPerPlayer,
+      }
+    });
 
     socket.once("game-created", ({ roomCode, gameState }) => {
       localStorage.setItem("monopoly-role", "host");
@@ -155,6 +163,44 @@ export default function Lobby() {
               {error}
             </div>
           )}
+
+          <div className="space-y-4 mb-6">
+            {/* Starting Money */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Starting Money
+              </label>
+              <input
+                type="number"
+                value={startingMoney}
+                onChange={(e) => setStartingMoney(parseInt(e.target.value) || 0)}
+                className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:outline-none text-gray-900 font-semibold"
+                min="0"
+                step="100"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Amount each player starts with
+              </p>
+            </div>
+
+            {/* Deed Cards Per Player */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Deed Cards Per Player
+              </label>
+              <input
+                type="number"
+                value={deedCardsPerPlayer}
+                onChange={(e) => setDeedCardsPerPlayer(parseInt(e.target.value) || 0)}
+                className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:outline-none text-gray-900 font-semibold"
+                min="0"
+                max="10"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Random deed cards given to each player
+              </p>
+            </div>
+          </div>
 
           <div className="space-y-4">
             <button

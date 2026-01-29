@@ -39,7 +39,7 @@ app.prepare().then(() => {
     console.log('Client connected:', socket.id);
 
     // Create a new game room
-    socket.on('create-game', ({ hostName }) => {
+    socket.on('create-game', ({ hostName, settings }) => {
       const roomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
       
       const gameState = {
@@ -52,9 +52,11 @@ app.prepare().then(() => {
         transactions: [],
         started: false,
         settings: {
-          startingMoney: 15000,
-          deedCardsPerPlayer: 2,
+          startingMoney: settings?.startingMoney || 15000,
+          deedCardsPerPlayer: settings?.deedCardsPerPlayer || 2,
         },
+        availableDeeds: [],
+        deedRequests: [],
       };
 
       gameRooms.set(roomCode, gameState);
@@ -265,6 +267,10 @@ app.prepare().then(() => {
         console.log(`${player.name} received ${player.deedCards.length} deed cards`);
       });
 
+      // Store remaining deeds as available
+      gameState.availableDeeds = shuffledDeedCards.slice(cardIndex);
+      console.log(`${gameState.availableDeeds.length} deed cards remain available`);
+
       gameState.started = true;
       io.to(roomCode).emit('game-started', { gameState });
       
@@ -347,6 +353,139 @@ app.prepare().then(() => {
       io.to(roomCode).emit('transaction-complete', { transaction });
       
       console.log(`Transaction in ${roomCode}: ${sender.name} → ${receiver.name} $${amount}`);
+    });
+
+    // Player requests to buy/sell deed
+    socket.on('deed-request', ({ roomCode, type, deedCard }) => {
+      const gameState = gameRooms.get(roomCode);
+      
+      if (!gameState) {
+        socket.emit('error', { message: 'Game not found' });
+        return;
+      }
+
+      const player = gameState.players.find(p => p.id === socket.id);
+      if (!player) {
+        socket.emit('error', { message: 'Player not found' });
+        return;
+      }
+
+      const request = {
+        id: `${socket.id}-${Date.now()}`,
+        type,
+        playerId: socket.id,
+        playerName: player.name,
+        deedCard,
+        timestamp: Date.now(),
+      };
+
+      gameState.deedRequests.push(request);
+      io.to(roomCode).emit('deed-request-created', { gameState });
+      
+      console.log(`${player.name} wants to ${type} deed: ${deedCard.name}`);
+    });
+
+    // Bank confirms deed request (buy/sell)
+    socket.on('confirm-deed-request', ({ roomCode, requestId, approved }) => {
+      const gameState = gameRooms.get(roomCode);
+      
+      if (!gameState || gameState.host !== socket.id) {
+        socket.emit('error', { message: 'Not authorized' });
+        return;
+      }
+
+      const requestIndex = gameState.deedRequests.findIndex(r => r.id === requestId);
+      if (requestIndex === -1) {
+        socket.emit('error', { message: 'Request not found' });
+        return;
+      }
+
+      const request = gameState.deedRequests[requestIndex];
+      const player = gameState.players.find(p => p.id === request.playerId);
+
+      if (!player) {
+        socket.emit('error', { message: 'Player not found' });
+        return;
+      }
+
+      if (approved) {
+        if (request.type === 'buy') {
+          // Player buys deed from bank
+          if (player.balance >= request.deedCard.price) {
+            player.balance -= request.deedCard.price;
+            gameState.bank.balance += request.deedCard.price;
+            
+            if (!player.deedCards) player.deedCards = [];
+            player.deedCards.push(request.deedCard);
+            
+            // Remove from available deeds
+            gameState.availableDeeds = gameState.availableDeeds.filter(
+              d => d.id !== request.deedCard.id
+            );
+            
+            console.log(`${player.name} bought ${request.deedCard.name} for $${request.deedCard.price}`);
+          } else {
+            socket.emit('error', { message: 'Player has insufficient funds' });
+            gameState.deedRequests.splice(requestIndex, 1);
+            io.to(roomCode).emit('game-updated', { gameState });
+            return;
+          }
+        } else if (request.type === 'sell') {
+          // Player sells deed to bank
+          const deedIndex = player.deedCards?.findIndex(d => d.id === request.deedCard.id);
+          if (deedIndex !== -1 && player.deedCards) {
+            player.balance += request.deedCard.price;
+            gameState.bank.balance -= request.deedCard.price;
+            
+            player.deedCards.splice(deedIndex, 1);
+            
+            // Add back to available deeds
+            gameState.availableDeeds.push(request.deedCard);
+            
+            console.log(`${player.name} sold ${request.deedCard.name} for $${request.deedCard.price}`);
+          } else {
+            socket.emit('error', { message: 'Player does not own this deed' });
+            gameState.deedRequests.splice(requestIndex, 1);
+            io.to(roomCode).emit('game-updated', { gameState });
+            return;
+          }
+        }
+      }
+
+      // Remove request
+      gameState.deedRequests.splice(requestIndex, 1);
+      io.to(roomCode).emit('game-updated', { gameState });
+    });
+
+    // Bank gives deed to player
+    socket.on('bank-give-deed', ({ roomCode, playerId, deedCard }) => {
+      const gameState = gameRooms.get(roomCode);
+      
+      if (!gameState || gameState.host !== socket.id) {
+        socket.emit('error', { message: 'Not authorized' });
+        return;
+      }
+
+      const player = gameState.players.find(p => p.id === playerId);
+      if (!player) {
+        socket.emit('error', { message: 'Player not found' });
+        return;
+      }
+
+      // Check if deed is available
+      const deedIndex = gameState.availableDeeds.findIndex(d => d.id === deedCard.id);
+      if (deedIndex === -1) {
+        socket.emit('error', { message: 'Deed not available' });
+        return;
+      }
+
+      // Transfer deed
+      if (!player.deedCards) player.deedCards = [];
+      player.deedCards.push(deedCard);
+      gameState.availableDeeds.splice(deedIndex, 1);
+
+      io.to(roomCode).emit('game-updated', { gameState });
+      console.log(`Bank gave ${deedCard.name} to ${player.name}`);
     });
 
     // Handle disconnect

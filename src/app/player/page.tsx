@@ -25,8 +25,8 @@ export default function PlayerView() {
   const [showError, setShowError] = useState(false);
   const [showWarning, setShowWarning] = useState(false);
   const [warningMessage, setWarningMessage] = useState("");
-  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
-
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);  const [showMyDeeds, setShowMyDeeds] = useState(false);
+  const [showAvailableDeeds, setShowAvailableDeeds] = useState(false);
   useEffect(() => {
     const role = localStorage.getItem("monopoly-role");
     const savedRoomCode = localStorage.getItem("monopoly-room");
@@ -75,6 +75,13 @@ export default function PlayerView() {
 
     socket.on("game-updated", ({ gameState }) => {
       console.log("Game updated");
+      setGameState(gameState);
+      const player = gameState.players.find((p) => p.id === socket.id);
+      setCurrentPlayer(player || null);
+    });
+
+    socket.on("deed-request-created", ({ gameState }) => {
+      console.log("Deed request created");
       setGameState(gameState);
       const player = gameState.players.find((p) => p.id === socket.id);
       setCurrentPlayer(player || null);
@@ -170,6 +177,16 @@ export default function PlayerView() {
 
   const handleLeaveGame = () => {
     setShowLeaveConfirm(true);
+  };
+
+  const handleDeedRequest = (type: 'buy' | 'sell', deedCard: any) => {
+    socket.emit('deed-request', {
+      roomCode,
+      type,
+      deedCard,
+    });
+    setShowMyDeeds(false);
+    setShowAvailableDeeds(false);
   };
 
   const confirmLeaveGame = () => {
@@ -309,6 +326,25 @@ export default function PlayerView() {
 
           {gameState.started && (
             <>
+              {/* Deed Management */}
+              <div className="bg-white rounded-xl shadow-xl p-6 mb-6">
+                <h3 className="text-xl font-bold text-gray-800 mb-4">📜 Deed Cards</h3>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    onClick={() => setShowMyDeeds(true)}
+                    className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-lg transition-colors"
+                  >
+                    My Deeds ({currentPlayer.deedCards?.length || 0})
+                  </button>
+                  <button
+                    onClick={() => setShowAvailableDeeds(true)}
+                    className="bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-lg transition-colors"
+                  >
+                    Buy Deed
+                  </button>
+                </div>
+              </div>
+
               {/* Send Money Actions */}
               <div className="bg-white rounded-xl shadow-xl p-6 mb-6">
                 <h3 className="text-xl font-bold text-gray-800 mb-4">
@@ -629,6 +665,101 @@ export default function PlayerView() {
                 Leave
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* My Deeds Modal */}
+      {showMyDeeds && (
+        <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center p-4 z-50 animate-fade-in overflow-y-auto">
+          <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-4xl w-full my-8 animate-scale-in">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-3xl font-bold text-gray-800">📜 My Deed Cards</h2>
+              <button
+                onClick={() => setShowMyDeeds(false)}
+                className="text-gray-500 hover:text-gray-700 text-3xl"
+              >
+                ×
+              </button>
+            </div>
+            {currentPlayer.deedCards && currentPlayer.deedCards.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-[60vh] overflow-y-auto">
+                {currentPlayer.deedCards.map((card) => (
+                  <div
+                    key={card.id}
+                    className="bg-gradient-to-br from-green-50 to-blue-50 border-2 border-gray-200 rounded-xl p-4"
+                  >
+                    <div className="flex justify-between items-start mb-2">
+                      <span className="text-xs font-bold text-gray-500 bg-white px-2 py-1 rounded">
+                        #{card.id}
+                      </span>
+                      <span className="text-lg font-bold text-green-600">
+                        ${card.price.toLocaleString()}
+                      </span>
+                    </div>
+                    <h3 className="text-lg font-bold text-gray-800 mb-3">{card.name}</h3>
+                    <button
+                      onClick={() => handleDeedRequest('sell', card)}
+                      className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition-colors"
+                    >
+                      Sell to Bank
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                <p className="text-xl">You don't have any deed cards yet</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Available Deeds Modal */}
+      {showAvailableDeeds && (
+        <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center p-4 z-50 animate-fade-in overflow-y-auto">
+          <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-4xl w-full my-8 animate-scale-in">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-3xl font-bold text-gray-800">🏪 Available Deed Cards</h2>
+              <button
+                onClick={() => setShowAvailableDeeds(false)}
+                className="text-gray-500 hover:text-gray-700 text-3xl"
+              >
+                ×
+              </button>
+            </div>
+            {gameState.availableDeeds && gameState.availableDeeds.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-[60vh] overflow-y-auto">
+                {gameState.availableDeeds.map((card) => (
+                  <div
+                    key={card.id}
+                    className="bg-gradient-to-br from-yellow-50 to-orange-50 border-2 border-gray-200 rounded-xl p-4"
+                  >
+                    <div className="flex justify-between items-start mb-2">
+                      <span className="text-xs font-bold text-gray-500 bg-white px-2 py-1 rounded">
+                        #{card.id}
+                      </span>
+                      <span className="text-lg font-bold text-green-600">
+                        ${card.price.toLocaleString()}
+                      </span>
+                    </div>
+                    <h3 className="text-lg font-bold text-gray-800 mb-3">{card.name}</h3>
+                    <button
+                      onClick={() => handleDeedRequest('buy', card)}
+                      disabled={currentPlayer.balance < card.price}
+                      className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-bold py-2 px-4 rounded-lg transition-colors"
+                    >
+                      {currentPlayer.balance < card.price ? 'Insufficient Funds' : 'Request to Buy'}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                <p className="text-xl">No deed cards available at the moment</p>
+              </div>
+            )}
           </div>
         </div>
       )}

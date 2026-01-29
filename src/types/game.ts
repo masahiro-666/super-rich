@@ -13,6 +13,15 @@ export interface DeedCard {
   price: number;
 }
 
+export interface DeedRequest {
+  id: string;
+  type: 'buy' | 'sell';
+  playerId: string;
+  playerName: string;
+  deedCard: DeedCard;
+  timestamp: number;
+}
+
 export interface Transaction {
   from: string;
   to: string;
@@ -35,6 +44,8 @@ export interface GameState {
     startingMoney: number;
     deedCardsPerPlayer: number;
   };
+  availableDeeds?: DeedCard[];
+  deedRequests?: DeedRequest[];
 }
 
 export const INITIAL_MONEY = 15000;
