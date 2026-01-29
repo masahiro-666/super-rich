@@ -353,6 +353,35 @@ export default function PlayerView() {
                     All Deeds
                   </button>
                 </div>
+
+                {/* My Deeds Grid Display */}
+                {currentPlayer.deedCards && currentPlayer.deedCards.length > 0 && (
+                  <div className="mt-6">
+                    <h4 className="text-lg font-bold text-gray-700 mb-3">
+                      Your Deeds:
+                    </h4>
+                    <div className="grid grid-cols-3 gap-3 max-h-80 overflow-y-auto">
+                      {currentPlayer.deedCards.map((card) => (
+                        <div
+                          key={card.id}
+                          className="bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-300 rounded-lg p-3"
+                        >
+                          <div className="flex justify-between items-start mb-1">
+                            <span className="text-xs font-bold text-gray-500 bg-white px-2 py-1 rounded">
+                              #{card.id}
+                            </span>
+                            <span className="text-sm font-bold text-green-600">
+                              ${card.price.toLocaleString()}
+                            </span>
+                          </div>
+                          <h4 className="text-sm font-bold text-gray-800">
+                            {card.name}
+                          </h4>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Send Money Actions */}
