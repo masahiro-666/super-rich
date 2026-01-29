@@ -32,16 +32,19 @@ Access at: `http://localhost:3000`
 ### Option 2: Development Mode
 
 1. **Install dependencies:**
+
 ```bash
 npm install
 ```
 
 2. **Run the development server:**
+
 ```bash
 npm run dev
 ```
 
 3. **Open your browser:**
+
 ```
 http://localhost:3000
 ```
@@ -143,6 +146,7 @@ chmod +x docker.sh
 ```
 
 The script provides options to:
+
 - 🚀 Start the application
 - 🛑 Stop the application
 - 🔄 Rebuild and restart
@@ -168,6 +172,7 @@ HOSTNAME=0.0.0.0
 ## Deed Cards
 
 29 Thai property deed cards included, ranging from ฿600 to ฿4,000:
+
 - Popular Bangkok locations (Siam, Asok, Thonglor, etc.)
 - Tourist destinations (Phuket, Pattaya, Chiang Mai)
 - Cultural sites (Grand Palace, Ayutthaya, Floating Market)
@@ -182,4 +187,3 @@ This project is private and for educational purposes.
 - [Socket.IO Documentation](https://socket.io/docs/)
 - [Docker Documentation](https://docs.docker.com/)
 - [Tailwind CSS Documentation](https://tailwindcss.com/docs)
-
