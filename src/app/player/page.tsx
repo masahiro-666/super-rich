@@ -36,6 +36,9 @@ export default function PlayerView() {
     name: string;
   } | null>(null);
   const [amountHistory, setAmountHistory] = useState<number[]>([]);
+  const [showConfirmSellDeed, setShowConfirmSellDeed] = useState(false);
+  const [pendingSellDeed, setPendingSellDeed] = useState<any>(null);
+  const [deedFilter, setDeedFilter] = useState<"all" | "available" | "mine" | "others">("all");
   useEffect(() => {
     const role = localStorage.getItem("monopoly-role");
     const savedRoomCode = localStorage.getItem("monopoly-room");
@@ -207,13 +210,32 @@ export default function PlayerView() {
   };
 
   const handleDeedRequest = (type: "buy" | "sell", deedCard: any) => {
+    if (type === "sell") {
+      // Show confirmation modal for selling
+      setPendingSellDeed(deedCard);
+      setShowConfirmSellDeed(true);
+    } else {
+      // Direct request for buying
+      socket.emit("deed-request", {
+        roomCode,
+        type,
+        deedCard,
+      });
+      setShowAvailableDeeds(false);
+    }
+  };
+
+  const confirmSellDeed = () => {
+    if (!pendingSellDeed) return;
+    
     socket.emit("deed-request", {
       roomCode,
-      type,
-      deedCard,
+      type: "sell",
+      deedCard: pendingSellDeed,
     });
     setShowMyDeeds(false);
-    setShowAvailableDeeds(false);
+    setShowConfirmSellDeed(false);
+    setPendingSellDeed(null);
   };
 
   const confirmLeaveGame = () => {
@@ -478,9 +500,9 @@ export default function PlayerView() {
               </div>
 
               {/* Recent Transactions */}
-              <div className="bg-white rounded-xl shadow-xl p-6">
+              <div className="bg-white rounded-xl shadow-xl p-6 mb-6">
                 <h3 className="text-xl font-bold text-gray-800 mb-4">
-                  Recent Transactions
+                  💰 Recent Transactions
                 </h3>
                 <div className="space-y-2 max-h-64 overflow-y-auto">
                   {gameState.transactions
@@ -535,6 +557,74 @@ export default function PlayerView() {
                   )}
                 </div>
               </div>
+
+              {/* Deed Transactions */}
+              {gameState.deedTransactions && (
+                <div className="bg-white rounded-xl shadow-xl p-6">
+                  <h3 className="text-xl font-bold text-gray-800 mb-4">
+                    📜 Deed Transactions
+                  </h3>
+                  <div className="space-y-2 max-h-64 overflow-y-auto">
+                    {gameState.deedTransactions
+                      .slice(-10)
+                      .reverse()
+                      .map((transaction, index) => (
+                        <div
+                          key={index}
+                          className={`p-3 rounded-lg text-sm ${
+                            transaction.type === "buy"
+                              ? "bg-green-50 border-l-4 border-green-500"
+                              : transaction.type === "sell"
+                                ? "bg-red-50 border-l-4 border-red-500"
+                                : "bg-blue-50 border-l-4 border-blue-500"
+                          }`}
+                        >
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <span className="font-semibold text-gray-800">
+                                {transaction.playerName}
+                              </span>
+                              <span className="text-gray-600">
+                                {transaction.type === "buy"
+                                  ? " bought "
+                                  : transaction.type === "sell"
+                                    ? " sold "
+                                    : " received "}
+                              </span>
+                              <span className="font-semibold text-gray-800">
+                                {transaction.deedCard.name}
+                              </span>
+                              {transaction.type !== "give" && (
+                                <span className="text-gray-600">
+                                  {transaction.type === "buy"
+                                    ? " from Bank"
+                                    : " to Bank"}
+                                </span>
+                              )}
+                            </div>
+                            {transaction.price > 0 && (
+                              <span
+                                className={`font-bold ${
+                                  transaction.type === "buy"
+                                    ? "text-red-600"
+                                    : "text-green-600"
+                                }`}
+                              >
+                                {transaction.type === "buy" ? "-" : "+"}$
+                                {transaction.price.toLocaleString()}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    {gameState.deedTransactions.length === 0 && (
+                      <p className="text-gray-500 text-center py-4">
+                        No deed transactions yet
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
             </>
           )}
         </div>
@@ -828,6 +918,51 @@ export default function PlayerView() {
         </div>
       )}
 
+      {/* Confirm Sell Deed Modal */}
+      {showConfirmSellDeed && pendingSellDeed && (
+        <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center p-4 z-50 animate-fade-in">
+          <div className="bg-white rounded-3xl shadow-2xl p-12 max-w-md w-full text-center animate-scale-in">
+            <div className="text-6xl mb-4">🏦</div>
+            <h2 className="text-3xl font-bold text-gray-800 mb-4">
+              Sell Deed to Bank?
+            </h2>
+            <div className="bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-300 rounded-xl p-4 mb-6">
+              <div className="flex justify-between items-start mb-2">
+                <span className="text-xs font-bold text-gray-500 bg-white px-2 py-1 rounded">
+                  #{pendingSellDeed.id}
+                </span>
+                <span className="text-lg font-bold text-green-600">
+                  +${pendingSellDeed.price.toLocaleString()}
+                </span>
+              </div>
+              <h3 className="text-xl font-bold text-gray-800">
+                {pendingSellDeed.name}
+              </h3>
+            </div>
+            <p className="text-lg text-gray-700 mb-6">
+              You will receive ${pendingSellDeed.price.toLocaleString()} from the bank
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowConfirmSellDeed(false);
+                  setPendingSellDeed(null);
+                }}
+                className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-3 px-6 rounded-xl transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmSellDeed}
+                className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-xl transition-colors"
+              >
+                Sell Deed
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* My Deeds Modal */}
       {showMyDeeds && (
         <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center p-4 z-50 animate-fade-in overflow-y-auto">
@@ -950,42 +1085,63 @@ export default function PlayerView() {
             </div>
 
             {/* Summary Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-              <div className="bg-gradient-to-br from-green-100 to-green-200 rounded-xl p-4 text-center">
+            <div className="grid grid-cols-3 gap-4 mb-6">
+              <button
+                onClick={() => setDeedFilter(deedFilter === "available" ? "all" : "available")}
+                className={`bg-gradient-to-br from-green-100 to-green-200 rounded-xl p-4 text-center transition-all hover:scale-105 ${
+                  deedFilter === "available" ? "ring-4 ring-green-500" : ""
+                }`}
+              >
                 <div className="text-2xl font-bold text-green-700">
                   {gameState.availableDeeds?.length || 0}
                 </div>
                 <div className="text-sm text-gray-600">Available</div>
-              </div>
-              {gameState.players.map((player) => (
-                <div
-                  key={player.id}
-                  className={`bg-gradient-to-br rounded-xl p-4 text-center ${
-                    player.id === currentPlayer.id
-                      ? "from-blue-100 to-blue-200"
-                      : "from-gray-100 to-gray-200"
-                  }`}
-                >
-                  <div
-                    className={`text-2xl font-bold ${
-                      player.id === currentPlayer.id
-                        ? "text-blue-700"
-                        : "text-gray-700"
-                    }`}
-                  >
-                    {player.deedCards?.length || 0}
-                  </div>
-                  <div className="text-sm text-gray-600 truncate">
-                    {player.name}{" "}
-                    {player.id === currentPlayer.id ? "(You)" : ""}
-                  </div>
+              </button>
+              <button
+                onClick={() => setDeedFilter(deedFilter === "mine" ? "all" : "mine")}
+                className={`bg-gradient-to-br from-blue-100 to-blue-200 rounded-xl p-4 text-center transition-all hover:scale-105 ${
+                  deedFilter === "mine" ? "ring-4 ring-blue-500" : ""
+                }`}
+              >
+                <div className="text-2xl font-bold text-blue-700">
+                  {currentPlayer.deedCards?.length || 0}
                 </div>
-              ))}
+                <div className="text-sm text-gray-600 truncate">
+                  {currentPlayer.name} (You)
+                </div>
+              </button>
+              <button
+                onClick={() => setDeedFilter(deedFilter === "others" ? "all" : "others")}
+                className={`bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl p-4 text-center transition-all hover:scale-105 ${
+                  deedFilter === "others" ? "ring-4 ring-gray-500" : ""
+                }`}
+              >
+                <div className="text-2xl font-bold text-gray-700">
+                  {gameState.players
+                    .filter(p => p.id !== currentPlayer.id)
+                    .reduce((sum, p) => sum + (p.deedCards?.length || 0), 0)}
+                </div>
+                <div className="text-sm text-gray-600">Others</div>
+              </button>
             </div>
 
             {/* All Deeds Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-[60vh] overflow-y-auto">
-              {DEED_CARDS.map((card) => {
+              {DEED_CARDS.filter((card) => {
+                const owner = gameState.players.find((p) =>
+                  p.deedCards?.some((d) => d.id === card.id),
+                );
+                const isAvailable = gameState.availableDeeds?.some(
+                  (d) => d.id === card.id,
+                );
+                const isOwnedByMe = owner?.id === currentPlayer.id;
+                
+                // Apply filter
+                if (deedFilter === "available") return isAvailable;
+                if (deedFilter === "mine") return isOwnedByMe;
+                if (deedFilter === "others") return owner && !isOwnedByMe;
+                return true; // "all"
+              }).map((card) => {
                 // Find owner of this deed
                 const owner = gameState.players.find((p) =>
                   p.deedCards?.some((d) => d.id === card.id),

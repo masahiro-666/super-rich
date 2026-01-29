@@ -977,24 +977,56 @@ export default function Host() {
                   card.name.toLowerCase().includes(query) ||
                   card.id.toString().includes(query)
                 );
-              }).map((card) => (
-                <div
-                  key={card.id}
-                  className="bg-gradient-to-br from-green-50 to-blue-50 border-2 border-gray-200 rounded-xl p-4 hover:shadow-lg transition-shadow"
-                >
-                  <div className="flex justify-between items-start mb-2">
-                    <span className="text-xs font-bold text-gray-500 bg-white px-2 py-1 rounded">
-                      #{card.id}
-                    </span>
-                    <span className="text-lg font-bold text-green-600">
-                      ${card.price.toLocaleString()}
-                    </span>
+              }).map((card) => {
+                // Find owner
+                const owner = gameState.players.find(p => 
+                  p.deedCards?.some(d => d.id === card.id)
+                );
+                const isAvailable = gameState.availableDeeds?.some(d => d.id === card.id);
+                
+                return (
+                  <div
+                    key={card.id}
+                    className={`border-2 rounded-xl p-4 hover:shadow-lg transition-shadow ${
+                      owner
+                        ? "bg-gradient-to-br from-blue-50 to-purple-50 border-blue-300"
+                        : isAvailable
+                          ? "bg-gradient-to-br from-green-50 to-blue-50 border-gray-200"
+                          : "bg-gradient-to-br from-gray-50 to-gray-100 border-gray-300"
+                    }`}
+                  >
+                    <div className="flex justify-between items-start mb-2">
+                      <span className="text-xs font-bold text-gray-500 bg-white px-2 py-1 rounded">
+                        #{card.id}
+                      </span>
+                      <span className="text-lg font-bold text-green-600">
+                        ${card.price.toLocaleString()}
+                      </span>
+                    </div>
+                    <h3 className="text-lg font-bold text-gray-800 mb-2">
+                      {card.name}
+                    </h3>
+                    <div className="text-xs font-semibold">
+                      {owner ? (
+                        <div
+                          className="flex items-center gap-1 bg-blue-100 text-blue-700 px-2 py-1 rounded"
+                          style={owner.color ? { borderLeft: `3px solid ${owner.color}` } : {}}
+                        >
+                          <span>👤 {owner.name}</span>
+                        </div>
+                      ) : isAvailable ? (
+                        <span className="text-green-600 bg-green-100 px-2 py-1 rounded">
+                          🏦 Available
+                        </span>
+                      ) : (
+                        <span className="text-gray-500 bg-gray-200 px-2 py-1 rounded">
+                          ❓ Unknown
+                        </span>
+                      )}
+                    </div>
                   </div>
-                  <h3 className="text-lg font-bold text-gray-800">
-                    {card.name}
-                  </h3>
-                </div>
-              ))}
+                );
+              })}
             </div>
             <div className="mt-6 flex justify-end">
               <button
