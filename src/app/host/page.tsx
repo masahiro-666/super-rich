@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { io, Socket } from "socket.io-client";
 import { GameState } from "@/types/game";
-import { INITIAL_MONEY, MONEY_BREAKDOWN } from "@/types/game";
+import { INITIAL_MONEY, MONEY_BREAKDOWN, DEED_CARDS } from "@/types/game";
 
 let socket: Socket;
 
@@ -24,6 +24,7 @@ export default function Host() {
   const [showError, setShowError] = useState(false);
   const [showWarning, setShowWarning] = useState(false);
   const [warningMessage, setWarningMessage] = useState("");
+  const [showLandCards, setShowLandCards] = useState(false);
 
   useEffect(() => {
     const role = localStorage.getItem("monopoly-role");
@@ -228,12 +229,20 @@ export default function Host() {
                 </div>
               </div>
             </div>
-            <button
-              onClick={handleNewGame}
-              className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-semibold"
-            >
-              End Game
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowLandCards(true)}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold"
+              >
+                📜 Deed Cards
+              </button>
+              <button
+                onClick={handleNewGame}
+                className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-semibold"
+              >
+                End Game
+              </button>
+            </div>
           </div>
         </div>
 
@@ -577,6 +586,45 @@ export default function Host() {
             >
               OK
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Deed Cards Modal */}
+      {showLandCards && (
+        <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center p-4 z-50 animate-fade-in overflow-y-auto">
+          <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-4xl w-full my-8 animate-scale-in">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-3xl font-bold text-gray-800">📜 Deed Cards</h2>
+              <button
+                onClick={() => setShowLandCards(false)}
+                className="text-gray-500 hover:text-gray-700 text-3xl"
+              >
+                ×
+              </button>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-[70vh] overflow-y-auto">
+              {DEED_CARDS.map((card) => (
+                <div
+                  key={card.id}
+                  className="bg-gradient-to-br from-green-50 to-blue-50 border-2 border-gray-200 rounded-xl p-4 hover:shadow-lg transition-shadow"
+                >
+                  <div className="flex justify-between items-start mb-2">
+                    <span className="text-xs font-bold text-gray-500 bg-white px-2 py-1 rounded">#{card.id}</span>
+                    <span className="text-lg font-bold text-green-600">${card.price.toLocaleString()}</span>
+                  </div>
+                  <h3 className="text-lg font-bold text-gray-800">{card.name}</h3>
+                </div>
+              ))}
+            </div>
+            <div className="mt-6 flex justify-end">
+              <button
+                onClick={() => setShowLandCards(false)}
+                className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-xl transition-colors"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}
