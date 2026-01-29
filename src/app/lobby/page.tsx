@@ -10,10 +10,10 @@ export default function Lobby() {
   const router = useRouter();
   const [mode, setMode] = useState<"select" | "create" | "join">("select");
   const [hostName, setHostName] = useState("");
-  const [playerCount, setPlayerCount] = useState(2);
   const [roomCode, setRoomCode] = useState("");
   const [playerName, setPlayerName] = useState("");
   const [error, setError] = useState("");
+  const [isJoining, setIsJoining] = useState(false);
 
   const initSocket = () => {
     if (!socket) {
@@ -26,7 +26,7 @@ export default function Lobby() {
     const socket = initSocket();
 
     const bankerName = "Banker";
-    socket.emit("create-game", { hostName: bankerName, playerCount });
+    socket.emit("create-game", { hostName: bankerName });
 
     socket.once("game-created", ({ roomCode, gameState }) => {
       localStorage.setItem("monopoly-role", "host");
@@ -51,20 +51,37 @@ export default function Lobby() {
       return;
     }
 
+    setIsJoining(true);
+    setError("");
+
     const socket = initSocket();
 
-    socket.emit("join-game", { roomCode: roomCode.toUpperCase(), playerName });
+    socket.emit("join-game", {
+      roomCode: roomCode.toUpperCase(),
+      playerName: playerName.trim(),
+    });
 
     socket.once("joined-game", ({ gameState, playerId }) => {
+      console.log("joined-game received:", { gameState, playerId });
+      const player = gameState.players.find((p) => p.id === playerId);
+
+      if (!player) {
+        setError("Failed to join game. Please try again.");
+        setIsJoining(false);
+        return;
+      }
+
       localStorage.setItem("monopoly-role", "player");
       localStorage.setItem("monopoly-room", roomCode.toUpperCase());
       localStorage.setItem("monopoly-player-id", playerId);
-      localStorage.setItem("monopoly-name", playerName);
+      localStorage.setItem("monopoly-name", player.name);
+
       router.push("/player");
     });
 
     socket.on("error", ({ message }) => {
       setError(message);
+      setIsJoining(false);
     });
   };
 
@@ -129,6 +146,9 @@ export default function Lobby() {
           <p className="text-center text-gray-600 mb-6">
             You will be the Banker
           </p>
+          <p className="text-center text-gray-500 text-sm mb-6">
+            Players can join your game (2-6 players)
+          </p>
 
           {error && (
             <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg">
@@ -137,30 +157,9 @@ export default function Lobby() {
           )}
 
           <div className="space-y-4">
-            <div>
-              <label className="block text-gray-700 font-semibold mb-2">
-                Number of Players
-              </label>
-              <div className="flex gap-2 flex-wrap">
-                {[2, 3, 4, 5, 6].map((count) => (
-                  <button
-                    key={count}
-                    onClick={() => setPlayerCount(count)}
-                    className={`px-4 py-2 rounded-lg font-semibold transition-all ${
-                      playerCount === count
-                        ? "bg-green-600 text-white"
-                        : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                    }`}
-                  >
-                    {count}
-                  </button>
-                ))}
-              </div>
-            </div>
-
             <button
               onClick={handleCreateGame}
-              className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-lg transition-colors shadow-lg text-lg mt-6"
+              className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-lg transition-colors shadow-lg text-lg"
             >
               Create Game
             </button>
@@ -227,9 +226,10 @@ export default function Lobby() {
 
           <button
             onClick={handleJoinGame}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-lg transition-colors shadow-lg text-lg mt-6"
+            disabled={isJoining}
+            className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-bold py-4 rounded-lg transition-colors shadow-lg text-lg mt-6"
           >
-            Join Game
+            {isJoining ? "Joining..." : "Join Game"}
           </button>
         </div>
       </div>

@@ -39,14 +39,14 @@ app.prepare().then(() => {
     console.log('Client connected:', socket.id);
 
     // Create a new game room
-    socket.on('create-game', ({ hostName, playerCount }) => {
+    socket.on('create-game', ({ hostName }) => {
       const roomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
       
       const gameState = {
         roomCode,
         host: socket.id,
         hostName,
-        playerCount,
+        playerCount: 6, // Max 6 players
         players: [],
         bank: { id: 'bank', name: 'Bank', balance: 1000000, isBank: true },
         transactions: [],
@@ -62,6 +62,7 @@ app.prepare().then(() => {
 
     // Join a game room
     socket.on('join-game', ({ roomCode, playerName }) => {
+      console.log(`join-game received: roomCode=${roomCode}, playerName="${playerName}"`);
       const gameState = gameRooms.get(roomCode);
       
       if (!gameState) {
@@ -82,6 +83,10 @@ app.prepare().then(() => {
       const player = {
         id: socket.id,
         name: playerName,
+        balance: 15000,
+        isBank: false,
+        color: null,
+      };
         balance: 15000,
         isBank: false,
         color: null,
@@ -142,21 +147,29 @@ app.prepare().then(() => {
 
     // Player reconnects to room
     socket.on('rejoin-as-player', ({ roomCode, playerName }) => {
+      console.log(`rejoin-as-player: roomCode=${roomCode}, playerName="${playerName}", socketId=${socket.id}`);
       const gameState = gameRooms.get(roomCode);
       
       if (!gameState) {
+        console.log(`Game not found for room code: ${roomCode}`);
         socket.emit('error', { message: 'Game not found' });
         return;
       }
 
-      // Find and update player socket ID
+      console.log(`Current players in room:`, gameState.players.map(p => ({ name: p.name, id: p.id })));
+
+      // Find player by name
       const player = gameState.players.find(p => p.name === playerName);
+      
       if (player) {
+        console.log(`Found player ${player.name}, updating socket ID from ${player.id} to ${socket.id}`);
         player.id = socket.id;
         socket.join(roomCode);
         socket.emit('joined-game', { gameState, playerId: socket.id });
-        console.log(`Player ${playerName} rejoined game ${roomCode}`);
+        console.log(`Player ${player.name} rejoined game ${roomCode}`);
       } else {
+        console.log(`Player not found: "${playerName}" in room ${roomCode}`);
+        console.log(`Available players:`, gameState.players.map(p => `"${p.name}"`));
         socket.emit('error', { message: 'Player not found in game' });
       }
     });

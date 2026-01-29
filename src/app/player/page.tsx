@@ -89,6 +89,19 @@ export default function PlayerView() {
     });
 
     socket.on("error", ({ message }) => {
+      // If game not found or player not found, clear localStorage and redirect to lobby
+      if (
+        message === "Game not found" ||
+        message.includes("Player not found")
+      ) {
+        localStorage.removeItem("monopoly-role");
+        localStorage.removeItem("monopoly-room");
+        localStorage.removeItem("monopoly-player-id");
+        localStorage.removeItem("monopoly-name");
+        router.push("/lobby");
+        return;
+      }
+
       setErrorMessage(message);
       setShowError(true);
     });

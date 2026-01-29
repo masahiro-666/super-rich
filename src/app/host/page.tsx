@@ -74,6 +74,17 @@ export default function Host() {
 
     socket.on("error", ({ message }) => {
       console.error("Socket error:", message);
+
+      // If game not found, clear localStorage and redirect to lobby
+      if (message === "Game not found") {
+        localStorage.removeItem("monopoly-role");
+        localStorage.removeItem("monopoly-room");
+        localStorage.removeItem("monopoly-player-id");
+        localStorage.removeItem("monopoly-name");
+        router.push("/lobby");
+        return;
+      }
+
       setErrorMessage(message);
       setShowError(true);
     });
@@ -232,8 +243,9 @@ export default function Host() {
               Waiting for Players...
             </h2>
             <p className="text-gray-700 mb-4">
-              {gameState.players.length} / {gameState.playerCount} players
-              joined
+              {gameState.players.length} player
+              {gameState.players.length !== 1 ? "s" : ""} joined (min: 2, max:
+              6)
             </p>
             {gameState.players.length > 0 && (
               <div className="mb-4 space-y-2">
@@ -254,35 +266,13 @@ export default function Host() {
             )}
             <button
               onClick={handleStartGame}
-              disabled={gameState.players.length === 0}
+              disabled={gameState.players.length < 2}
               className="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-bold py-3 px-6 rounded-lg transition-colors"
             >
-              Start Game
+              Start Game{" "}
+              {gameState.players.length >= 2 &&
+                `(${gameState.players.length} players)`}
             </button>
-          </div>
-        )}
-
-        {/* Starting Money Info */}
-        {!gameState.started && (
-          <div className="bg-white rounded-xl shadow-xl p-6 mb-6">
-            <h3 className="text-lg font-bold text-gray-800 mb-3">
-              Starting Money: ${INITIAL_MONEY.toLocaleString()}
-            </h3>
-            <div className="grid grid-cols-2 gap-2 text-sm text-gray-600">
-              {Object.entries(MONEY_BREAKDOWN).map(([value, count]) => (
-                <div
-                  key={value}
-                  className="flex justify-between bg-gray-50 p-2 rounded"
-                >
-                  <span>
-                    ${value} ×{count}
-                  </span>
-                  <span className="font-semibold">
-                    ${(parseInt(value) * count).toLocaleString()}
-                  </span>
-                </div>
-              ))}
-            </div>
           </div>
         )}
 
