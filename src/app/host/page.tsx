@@ -19,6 +19,11 @@ export default function Host() {
     "send",
   );
   const [showCopyTooltip, setShowCopyTooltip] = useState(false);
+  const [elapsedTime, setElapsedTime] = useState(0);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [showError, setShowError] = useState(false);
+  const [showWarning, setShowWarning] = useState(false);
+  const [warningMessage, setWarningMessage] = useState("");
 
   useEffect(() => {
     const role = localStorage.getItem("monopoly-role");
@@ -69,7 +74,8 @@ export default function Host() {
 
     socket.on("error", ({ message }) => {
       console.error("Socket error:", message);
-      alert(message);
+      setErrorMessage(message);
+      setShowError(true);
     });
 
     return () => {
@@ -84,10 +90,32 @@ export default function Host() {
       }
     };
   }, [router]);
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (gameState?.started) {
+      interval = setInterval(() => {
+        setElapsedTime((prev) => prev + 1);
+      }, 1000);
+    } else {
+      setElapsedTime(0);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [gameState?.started]);
 
+  const formatTime = (seconds: number) => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    return `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+  };
   const handleStartGame = () => {
     if (!gameState || gameState.players.length === 0) {
-      alert("Wait for players to join");
+      setWarningMessage(
+        "Please wait for players to join before starting the game",
+      );
+      setShowWarning(true);
       return;
     }
     socket.emit("start-game", { roomCode });
@@ -109,7 +137,8 @@ export default function Host() {
 
     const amountNum = parseInt(amount);
     if (isNaN(amountNum) || amountNum <= 0) {
-      alert("Please enter a valid amount");
+      setWarningMessage("Please enter a valid amount");
+      setShowWarning(true);
       return;
     }
 
@@ -164,6 +193,14 @@ export default function Host() {
                     {roomCode}
                   </p>
                 </div>
+                {gameState?.started && (
+                  <div className="ml-4 pl-4 border-l-2 border-gray-300">
+                    <p className="text-gray-600 text-sm">Game Time:</p>
+                    <p className="font-mono text-xl font-bold text-blue-600">
+                      ⏱️ {formatTime(elapsedTime)}
+                    </p>
+                  </div>
+                )}
                 <div className="relative">
                   <button
                     onClick={handleCopyRoomCode}
@@ -507,6 +544,46 @@ export default function Host() {
                 {transactionType === "send" ? "Send" : "Receive"}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Error Modal */}
+      {showError && (
+        <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center p-4 z-50 animate-fade-in">
+          <div className="bg-white rounded-3xl shadow-2xl p-12 max-w-md w-full text-center animate-scale-in">
+            <div className="text-6xl mb-4">⚠️</div>
+            <h2 className="text-3xl font-bold text-red-600 mb-4">Error</h2>
+            <p className="text-lg text-gray-700 mb-6">{errorMessage}</p>
+            <button
+              onClick={() => {
+                setShowError(false);
+                setErrorMessage("");
+              }}
+              className="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-8 rounded-xl transition-colors"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Warning Modal */}
+      {showWarning && (
+        <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center p-4 z-50 animate-fade-in">
+          <div className="bg-white rounded-3xl shadow-2xl p-12 max-w-md w-full text-center animate-scale-in">
+            <div className="text-6xl mb-4">💡</div>
+            <h2 className="text-3xl font-bold text-yellow-600 mb-4">Notice</h2>
+            <p className="text-lg text-gray-700 mb-6">{warningMessage}</p>
+            <button
+              onClick={() => {
+                setShowWarning(false);
+                setWarningMessage("");
+              }}
+              className="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-3 px-8 rounded-xl transition-colors"
+            >
+              OK
+            </button>
           </div>
         </div>
       )}

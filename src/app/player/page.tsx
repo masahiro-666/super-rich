@@ -20,6 +20,12 @@ export default function PlayerView() {
     "player",
   );
   const [showHostDisconnected, setShowHostDisconnected] = useState(false);
+  const [elapsedTime, setElapsedTime] = useState(0);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [showError, setShowError] = useState(false);
+  const [showWarning, setShowWarning] = useState(false);
+  const [warningMessage, setWarningMessage] = useState("");
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
 
   useEffect(() => {
     const role = localStorage.getItem("monopoly-role");
@@ -83,13 +89,35 @@ export default function PlayerView() {
     });
 
     socket.on("error", ({ message }) => {
-      alert(message);
+      setErrorMessage(message);
+      setShowError(true);
     });
 
     return () => {
       if (socket) socket.disconnect();
     };
   }, [router]);
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (gameState?.started) {
+      interval = setInterval(() => {
+        setElapsedTime((prev) => prev + 1);
+      }, 1000);
+    } else {
+      setElapsedTime(0);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [gameState?.started]);
+
+  const formatTime = (seconds: number) => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    return `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+  };
 
   const openTransactionModal = (targetId: string, type: "player" | "bank") => {
     setSelectedPlayerId(targetId);
@@ -103,12 +131,14 @@ export default function PlayerView() {
 
     const amountNum = parseInt(amount);
     if (isNaN(amountNum) || amountNum <= 0) {
-      alert("Please enter a valid amount");
+      setWarningMessage("Please enter a valid amount");
+      setShowWarning(true);
       return;
     }
 
     if (currentPlayer.balance < amountNum) {
-      alert("Insufficient balance");
+      setWarningMessage("Insufficient balance");
+      setShowWarning(true);
       return;
     }
 
@@ -126,11 +156,13 @@ export default function PlayerView() {
   };
 
   const handleLeaveGame = () => {
-    if (confirm("Are you sure you want to leave the game?")) {
-      localStorage.clear();
-      if (socket) socket.disconnect();
-      router.push("/lobby");
-    }
+    setShowLeaveConfirm(true);
+  };
+
+  const confirmLeaveGame = () => {
+    localStorage.clear();
+    if (socket) socket.disconnect();
+    router.push("/lobby");
   };
 
   if (!gameState || !currentPlayer) {
@@ -173,10 +205,20 @@ export default function PlayerView() {
                   <h1 className="text-3xl font-bold text-gray-800">
                     {currentPlayer.name}
                   </h1>
-                  <p className="text-gray-600">
-                    Room:{" "}
-                    <span className="font-mono font-bold">{roomCode}</span>
-                  </p>
+                  <div className="flex items-center gap-3">
+                    <p className="text-gray-600">
+                      Room:{" "}
+                      <span className="font-mono font-bold">{roomCode}</span>
+                    </p>
+                    {gameState.started && (
+                      <span className="ml-2 pl-2 border-l-2 border-gray-300">
+                        <span className="text-gray-600">Time: </span>
+                        <span className="font-mono font-bold text-blue-600">
+                          ⏱️ {formatTime(elapsedTime)}
+                        </span>
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
               <button
@@ -279,12 +321,9 @@ export default function PlayerView() {
                         onClick={() =>
                           openTransactionModal(player.id, "player")
                         }
-                        className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 rounded-lg transition-colors flex justify-between items-center px-4"
+                        className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 rounded-lg transition-colors flex items-center justify-center px-4"
                       >
                         <span>→ {player.name}</span>
-                        <span className="text-sm opacity-90">
-                          ${player.balance.toLocaleString()}
-                        </span>
                       </button>
                     ))}
                 </div>
@@ -319,9 +358,6 @@ export default function PlayerView() {
                             {player.name}
                           </span>
                         </div>
-                        <span className="text-green-600 font-bold">
-                          ${player.balance.toLocaleString()}
-                        </span>
                       </div>
                     ))}
                 </div>
@@ -468,6 +504,50 @@ export default function PlayerView() {
         )}
       </div>
 
+      {/* Error Modal */}
+      {showError && (
+        <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center p-4 z-50 animate-fade-in">
+          <div className="bg-white rounded-3xl shadow-2xl p-12 max-w-md w-full text-center animate-scale-in">
+            <div className="text-6xl mb-4">⚠️</div>
+            <h2 className="text-3xl font-bold text-red-600 mb-4">Error</h2>
+            <p className="text-lg text-gray-700 mb-6">{errorMessage}</p>
+            <button
+              onClick={() => {
+                setShowError(false);
+                setErrorMessage("");
+                localStorage.clear();
+                router.push("/lobby");
+              }}
+              className="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-8 rounded-xl transition-colors"
+            >
+              Return to Lobby
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Error Modal */}
+      {showError && (
+        <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center p-4 z-50 animate-fade-in">
+          <div className="bg-white rounded-3xl shadow-2xl p-12 max-w-md w-full text-center animate-scale-in">
+            <div className="text-6xl mb-4">⚠️</div>
+            <h2 className="text-3xl font-bold text-red-600 mb-4">Error</h2>
+            <p className="text-lg text-gray-700 mb-6">{errorMessage}</p>
+            <button
+              onClick={() => {
+                setShowError(false);
+                setErrorMessage("");
+                localStorage.clear();
+                router.push("/lobby");
+              }}
+              className="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-8 rounded-xl transition-colors"
+            >
+              Return to Lobby
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Host Disconnected Modal */}
       {showHostDisconnected && (
         <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center p-4 z-50 animate-fade-in">
@@ -486,6 +566,55 @@ export default function PlayerView() {
             </div>
             <div className="flex justify-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Warning Modal */}
+      {showWarning && (
+        <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center p-4 z-50 animate-fade-in">
+          <div className="bg-white rounded-3xl shadow-2xl p-12 max-w-md w-full text-center animate-scale-in">
+            <div className="text-6xl mb-4">💡</div>
+            <h2 className="text-3xl font-bold text-yellow-600 mb-4">Notice</h2>
+            <p className="text-lg text-gray-700 mb-6">{warningMessage}</p>
+            <button
+              onClick={() => {
+                setShowWarning(false);
+                setWarningMessage("");
+              }}
+              className="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-3 px-8 rounded-xl transition-colors"
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Leave Confirmation Modal */}
+      {showLeaveConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center p-4 z-50 animate-fade-in">
+          <div className="bg-white rounded-3xl shadow-2xl p-12 max-w-md w-full text-center animate-scale-in">
+            <div className="text-6xl mb-4">👋</div>
+            <h2 className="text-3xl font-bold text-gray-800 mb-4">
+              Leave Game?
+            </h2>
+            <p className="text-lg text-gray-700 mb-6">
+              Are you sure you want to leave the game?
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowLeaveConfirm(false)}
+                className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-3 px-6 rounded-xl transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmLeaveGame}
+                className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-xl transition-colors"
+              >
+                Leave
+              </button>
             </div>
           </div>
         </div>
