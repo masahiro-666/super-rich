@@ -6,20 +6,23 @@ import { GameState, Player } from "@/types/game";
 
 export default function Game() {
   const router = useRouter();
-  const [gameState, setGameState] = useState<GameState | null>(null);
+  const [gameState, setGameState] = useState<GameState | null>(() => {
+    if (typeof window !== "undefined") {
+      const savedGame = localStorage.getItem("monopoly-game");
+      return savedGame ? JSON.parse(savedGame) : null;
+    }
+    return null;
+  });
   const [showTransactionModal, setShowTransactionModal] = useState(false);
   const [transactionFrom, setTransactionFrom] = useState<Player | null>(null);
   const [transactionTo, setTransactionTo] = useState<Player | null>(null);
   const [amount, setAmount] = useState("");
 
   useEffect(() => {
-    const savedGame = localStorage.getItem("monopoly-game");
-    if (savedGame) {
-      setGameState(JSON.parse(savedGame));
-    } else {
+    if (!gameState) {
       router.push("/setup");
     }
-  }, [router]);
+  }, [router, gameState]);
 
   const saveGameState = (newState: GameState) => {
     setGameState(newState);
@@ -68,6 +71,8 @@ export default function Game() {
     const newTransaction = {
       from: transactionFrom.id,
       to: transactionTo.id,
+      fromName: transactionFrom.name,
+      toName: transactionTo.name,
       amount: amountNum,
       timestamp: Date.now(),
     };
@@ -181,16 +186,8 @@ export default function Game() {
               .slice(-10)
               .reverse()
               .map((transaction, index) => {
-                const fromName =
-                  transaction.from === -1
-                    ? "Bank"
-                    : gameState.players.find((p) => p.id === transaction.from)
-                        ?.name;
-                const toName =
-                  transaction.to === -1
-                    ? "Bank"
-                    : gameState.players.find((p) => p.id === transaction.to)
-                        ?.name;
+                const fromName = transaction.fromName || "Bank";
+                const toName = transaction.toName || "Bank";
 
                 return (
                   <div

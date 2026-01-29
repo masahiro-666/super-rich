@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { io, Socket } from "socket.io-client";
-import { GameState } from "@/types/game";
+import { GameState, DeedCard } from "@/types/game";
 import { INITIAL_MONEY, MONEY_BREAKDOWN, DEED_CARDS } from "@/types/game";
 import QRCode from "qrcode";
 import Image from "next/image";
@@ -13,7 +13,11 @@ let socket: Socket;
 export default function Host() {
   const router = useRouter();
   const [gameState, setGameState] = useState<GameState | null>(null);
-  const [roomCode, setRoomCode] = useState("");
+  const [roomCode, setRoomCode] = useState(
+    typeof window !== "undefined"
+      ? localStorage.getItem("monopoly-room") || ""
+      : "",
+  );
   const [showTransactionModal, setShowTransactionModal] = useState(false);
   const [selectedPlayerId, setSelectedPlayerId] = useState("");
   const [amount, setAmount] = useState("");
@@ -32,7 +36,9 @@ export default function Host() {
   const [deedCardsPerPlayer, setDeedCardsPerPlayer] = useState(2);
   const [deedSearchQuery, setDeedSearchQuery] = useState("");
   const [showGiveDeedModal, setShowGiveDeedModal] = useState(false);
-  const [selectedDeedToGive, setSelectedDeedToGive] = useState<any>(null);
+  const [selectedDeedToGive, setSelectedDeedToGive] = useState<DeedCard | null>(
+    null,
+  );
   const [selectedPlayerForDeed, setSelectedPlayerForDeed] = useState("");
   const [showConfirmTransaction, setShowConfirmTransaction] = useState(false);
   const [pendingTransactionTarget, setPendingTransactionTarget] = useState<{
@@ -67,8 +73,6 @@ export default function Host() {
         .then(setQrCodeDataUrl)
         .catch(console.error);
     }
-
-    setRoomCode(savedRoomCode);
 
     if (!socket || !socket.connected) {
       socket = io();
@@ -150,13 +154,11 @@ export default function Host() {
     };
   }, [router]);
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let interval: NodeJS.Timeout | undefined;
     if (gameState?.started) {
       interval = setInterval(() => {
         setElapsedTime((prev) => prev + 1);
       }, 1000);
-    } else {
-      setElapsedTime(0);
     }
     return () => {
       if (interval) clearInterval(interval);
@@ -467,11 +469,6 @@ export default function Host() {
                           }`}
                           style={{
                             backgroundColor: color,
-                            ringColor: isSelected
-                              ? color === "#FFFFFF"
-                                ? "#000000"
-                                : color
-                              : "transparent",
                             border:
                               color === "#FFFFFF"
                                 ? "2px solid #E5E7EB"

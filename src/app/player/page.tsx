@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { io, Socket } from "socket.io-client";
-import { GameState, Player, DEED_CARDS } from "@/types/game";
+import { GameState, Player, DeedCard, DEED_CARDS } from "@/types/game";
 
 let socket: Socket;
 
@@ -12,7 +12,11 @@ export default function PlayerView() {
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [currentPlayer, setCurrentPlayer] = useState<Player | null>(null);
   const [playerId, setPlayerId] = useState("");
-  const [roomCode, setRoomCode] = useState("");
+  const [roomCode, setRoomCode] = useState(
+    typeof window !== "undefined"
+      ? localStorage.getItem("monopoly-room") || ""
+      : "",
+  );
   const [showTransactionModal, setShowTransactionModal] = useState(false);
   const [selectedPlayerId, setSelectedPlayerId] = useState("");
   const [amount, setAmount] = useState("");
@@ -37,7 +41,7 @@ export default function PlayerView() {
   } | null>(null);
   const [amountHistory, setAmountHistory] = useState<number[]>([]);
   const [showConfirmSellDeed, setShowConfirmSellDeed] = useState(false);
-  const [pendingSellDeed, setPendingSellDeed] = useState<any>(null);
+  const [pendingSellDeed, setPendingSellDeed] = useState<DeedCard | null>(null);
   const [deedFilter, setDeedFilter] = useState<
     "all" | "available" | "mine" | "others"
   >("all");
@@ -50,8 +54,6 @@ export default function PlayerView() {
       router.push("/lobby");
       return;
     }
-
-    setRoomCode(savedRoomCode);
 
     socket = io();
 
@@ -67,14 +69,18 @@ export default function PlayerView() {
       console.log("Game state received:", gameState);
       setPlayerId(playerId);
       setGameState(gameState);
-      const player = gameState.players.find((p) => p.id === playerId);
+      const player = gameState.players.find(
+        (p: { id: string }) => p.id === playerId,
+      );
       setCurrentPlayer(player || null);
     });
 
     socket.on("player-joined", ({ gameState }) => {
       console.log("New player joined, updating game state");
       setGameState(gameState);
-      const player = gameState.players.find((p) => p.id === socket.id);
+      const player = gameState.players.find(
+        (p: { id: string }) => p.id === socket.id,
+      );
       if (player) {
         setCurrentPlayer(player);
       }
@@ -83,21 +89,27 @@ export default function PlayerView() {
     socket.on("game-started", ({ gameState }) => {
       console.log("Game started!");
       setGameState(gameState);
-      const player = gameState.players.find((p) => p.id === socket.id);
+      const player = gameState.players.find(
+        (p: { id: string }) => p.id === socket.id,
+      );
       setCurrentPlayer(player || null);
     });
 
     socket.on("game-updated", ({ gameState }) => {
       console.log("Game updated");
       setGameState(gameState);
-      const player = gameState.players.find((p) => p.id === socket.id);
+      const player = gameState.players.find(
+        (p: { id: string }) => p.id === socket.id,
+      );
       setCurrentPlayer(player || null);
     });
 
     socket.on("deed-request-created", ({ gameState }) => {
       console.log("Deed request created");
       setGameState(gameState);
-      const player = gameState.players.find((p) => p.id === socket.id);
+      const player = gameState.players.find(
+        (p: { id: string }) => p.id === socket.id,
+      );
       setCurrentPlayer(player || null);
     });
 
@@ -133,13 +145,11 @@ export default function PlayerView() {
   }, [router]);
 
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let interval: NodeJS.Timeout | undefined;
     if (gameState?.started) {
       interval = setInterval(() => {
         setElapsedTime((prev) => prev + 1);
       }, 1000);
-    } else {
-      setElapsedTime(0);
     }
     return () => {
       if (interval) clearInterval(interval);
@@ -157,7 +167,9 @@ export default function PlayerView() {
     const targetName =
       type === "bank"
         ? "Bank"
-        : gameState?.players.find((p) => p.id === targetId)?.name || "";
+        : gameState?.players.find(
+            (p: { id: string; name: string }) => p.id === targetId,
+          )?.name || "";
 
     setPendingTransactionTarget({
       id: targetId,
@@ -211,7 +223,7 @@ export default function PlayerView() {
     setShowLeaveConfirm(true);
   };
 
-  const handleDeedRequest = (type: "buy" | "sell", deedCard: any) => {
+  const handleDeedRequest = (type: "buy" | "sell", deedCard: DeedCard) => {
     if (type === "sell") {
       // Show confirmation modal for selling
       setPendingSellDeed(deedCard);
@@ -693,8 +705,9 @@ export default function PlayerView() {
                   <span className="font-bold text-gray-800">
                     {transactionType === "bank"
                       ? "Bank"
-                      : gameState.players.find((p) => p.id === selectedPlayerId)
-                          ?.name}
+                      : gameState.players.find(
+                          (p: { id: string }) => p.id === selectedPlayerId,
+                        )?.name}
                   </span>
                 </div>
               </div>
@@ -1010,7 +1023,9 @@ export default function PlayerView() {
               </div>
             ) : (
               <div className="text-center py-8 text-gray-500">
-                <p className="text-xl">You don't have any deed cards yet</p>
+                <p className="text-xl">
+                  You don&apos;t have any deed cards yet
+                </p>
               </div>
             )}
           </div>
@@ -1139,8 +1154,9 @@ export default function PlayerView() {
             {/* All Deeds Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-[60vh] overflow-y-auto">
               {DEED_CARDS.filter((card) => {
-                const owner = gameState.players.find((p) =>
-                  p.deedCards?.some((d) => d.id === card.id),
+                const owner = gameState.players.find(
+                  (p: { id: string; deedCards?: Array<{ id: number }> }) =>
+                    p.deedCards?.some((d) => d.id === card.id),
                 );
                 const isAvailable = gameState.availableDeeds?.some(
                   (d) => d.id === card.id,
@@ -1154,8 +1170,9 @@ export default function PlayerView() {
                 return true; // "all"
               }).map((card) => {
                 // Find owner of this deed
-                const owner = gameState.players.find((p) =>
-                  p.deedCards?.some((d) => d.id === card.id),
+                const owner = gameState.players.find(
+                  (p: { id: string; deedCards?: Array<{ id: number }> }) =>
+                    p.deedCards?.some((d) => d.id === card.id),
                 );
                 const isAvailable = gameState.availableDeeds?.some(
                   (d) => d.id === card.id,

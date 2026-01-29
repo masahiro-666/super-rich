@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { io, Socket } from "socket.io-client";
 
 let socket: Socket;
 
-export default function Lobby() {
+function LobbyContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const roomParam = searchParams?.get("room");
@@ -76,7 +76,9 @@ export default function Lobby() {
 
     socket.once("joined-game", ({ gameState, playerId }) => {
       console.log("joined-game received:", { gameState, playerId });
-      const player = gameState.players.find((p) => p.id === playerId);
+      const player = gameState.players.find(
+        (p: { id: string }) => p.id === playerId,
+      );
 
       if (!player) {
         setError("Failed to join game. Please try again.");
@@ -307,5 +309,19 @@ export default function Lobby() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function Lobby() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-gradient-to-br from-green-600 to-emerald-700 flex items-center justify-center">
+          <div className="text-white text-xl">Loading...</div>
+        </div>
+      }
+    >
+      <LobbyContent />
+    </Suspense>
   );
 }
