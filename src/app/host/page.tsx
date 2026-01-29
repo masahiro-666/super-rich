@@ -266,7 +266,7 @@ export default function Host() {
                 </div>
               )}
             </div>
-            
+
             <button
               onClick={handleStartGame}
               disabled={gameState.players.length < 2}
