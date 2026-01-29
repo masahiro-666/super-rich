@@ -25,6 +25,10 @@ export default function Host() {
   const [showWarning, setShowWarning] = useState(false);
   const [warningMessage, setWarningMessage] = useState("");
   const [showLandCards, setShowLandCards] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [startingMoney, setStartingMoney] = useState(15000);
+  const [deedCardsPerPlayer, setDeedCardsPerPlayer] = useState(2);
+  const [deedSearchQuery, setDeedSearchQuery] = useState("");
 
   useEffect(() => {
     const role = localStorage.getItem("monopoly-role");
@@ -55,6 +59,8 @@ export default function Host() {
     socket.on("game-created", ({ gameState }) => {
       console.log("Game state received:", gameState);
       setGameState(gameState);
+      setStartingMoney(gameState.settings?.startingMoney || 15000);
+      setDeedCardsPerPlayer(gameState.settings?.deedCardsPerPlayer || 2);
     });
 
     socket.on("player-joined", ({ gameState }) => {
@@ -71,6 +77,12 @@ export default function Host() {
 
     socket.on("game-started", ({ gameState }) => {
       setGameState(gameState);
+    });
+
+    socket.on("settings-updated", ({ gameState }) => {
+      setGameState(gameState);
+      setStartingMoney(gameState.settings?.startingMoney || 15000);
+      setDeedCardsPerPlayer(gameState.settings?.deedCardsPerPlayer || 2);
     });
 
     socket.on("error", ({ message }) => {
@@ -135,6 +147,17 @@ export default function Host() {
 
   const handleColorChange = (playerId: string, color: string) => {
     socket.emit("update-player-color", { roomCode, playerId, color });
+  };
+
+  const handleUpdateSettings = () => {
+    socket.emit("update-settings", {
+      roomCode,
+      settings: {
+        startingMoney,
+        deedCardsPerPlayer,
+      },
+    });
+    setShowSettings(false);
   };
 
   const openTransactionModal = (playerId: string, type: "send" | "receive") => {
@@ -230,6 +253,14 @@ export default function Host() {
               </div>
             </div>
             <div className="flex gap-2">
+              {!gameState.started && (
+                <button
+                  onClick={() => setShowSettings(true)}
+                  className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-semibold"
+                >
+                  ⚙️ Settings
+                </button>
+              )}
               <button
                 onClick={() => setShowLandCards(true)}
                 className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold"
@@ -595,34 +626,149 @@ export default function Host() {
         <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center p-4 z-50 animate-fade-in overflow-y-auto">
           <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-4xl w-full my-8 animate-scale-in">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-3xl font-bold text-gray-800">📜 Deed Cards</h2>
+              <h2 className="text-3xl font-bold text-gray-800">
+                📜 Deed Cards
+              </h2>
               <button
-                onClick={() => setShowLandCards(false)}
+                onClick={() => {
+                  setShowLandCards(false);
+                  setDeedSearchQuery("");
+                }}
                 className="text-gray-500 hover:text-gray-700 text-3xl"
               >
                 ×
               </button>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-[70vh] overflow-y-auto">
-              {DEED_CARDS.map((card) => (
+            
+            {/* Search Bar */}
+            <div className="mb-4">
+              <input
+                type="text"
+                value={deedSearchQuery}
+                onChange={(e) => setDeedSearchQuery(e.target.value)}
+                placeholder="Search by name or number..."
+                className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:border-blue-500 focus:outline-none text-lg text-gray-900"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-[60vh] overflow-y-auto">
+              {DEED_CARDS.filter((card) => {
+                const query = deedSearchQuery.toLowerCase();
+                return (
+                  card.name.toLowerCase().includes(query) ||
+                  card.id.toString().includes(query)
+                );
+              }).map((card) => (
                 <div
                   key={card.id}
                   className="bg-gradient-to-br from-green-50 to-blue-50 border-2 border-gray-200 rounded-xl p-4 hover:shadow-lg transition-shadow"
                 >
                   <div className="flex justify-between items-start mb-2">
-                    <span className="text-xs font-bold text-gray-500 bg-white px-2 py-1 rounded">#{card.id}</span>
-                    <span className="text-lg font-bold text-green-600">${card.price.toLocaleString()}</span>
+                    <span className="text-xs font-bold text-gray-500 bg-white px-2 py-1 rounded">
+                      #{card.id}
+                    </span>
+                    <span className="text-lg font-bold text-green-600">
+                      ${card.price.toLocaleString()}
+                    </span>
                   </div>
-                  <h3 className="text-lg font-bold text-gray-800">{card.name}</h3>
+                  <h3 className="text-lg font-bold text-gray-800">
+                    {card.name}
+                  </h3>
                 </div>
               ))}
             </div>
             <div className="mt-6 flex justify-end">
               <button
-                onClick={() => setShowLandCards(false)}
+                onClick={() => {
+                  setShowLandCards(false);
+                  setDeedSearchQuery("");
+                }}
                 className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-xl transition-colors"
               >
                 Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Settings Modal */}
+      {showSettings && (
+        <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center p-4 z-50 animate-fade-in">
+          <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-lg w-full animate-scale-in">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-3xl font-bold text-gray-800">⚙️ Game Settings</h2>
+              <button
+                onClick={() => setShowSettings(false)}
+                className="text-gray-500 hover:text-gray-700 text-3xl"
+              >
+                ×
+              </button>
+            </div>
+            
+            <div className="space-y-6">
+              {/* Starting Money */}
+              <div>
+                <label className="block text-lg font-semibold text-gray-700 mb-2">
+                  Starting Money
+                </label>
+                <input
+                  type="number"
+                  value={startingMoney}
+                  onChange={(e) => setStartingMoney(parseInt(e.target.value) || 0)}
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:border-purple-500 focus:outline-none text-lg text-gray-900 font-semibold"
+                  min="0"
+                  step="100"
+                />
+                <p className="text-sm text-gray-500 mt-1">
+                  Amount of money each player starts with
+                </p>
+              </div>
+
+              {/* Deed Cards Per Player */}
+              <div>
+                <label className="block text-lg font-semibold text-gray-700 mb-2">
+                  Deed Cards Per Player
+                </label>
+                <input
+                  type="number"
+                  value={deedCardsPerPlayer}
+                  onChange={(e) => setDeedCardsPerPlayer(parseInt(e.target.value) || 0)}
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:border-purple-500 focus:outline-none text-lg text-gray-900 font-semibold"
+                  min="0"
+                  max="10"
+                />
+                <p className="text-sm text-gray-500 mt-1">
+                  Number of random deed cards distributed to each player
+                </p>
+              </div>
+
+              {/* Current Settings Display */}
+              {gameState && gameState.settings && (
+                <div className="bg-gray-50 rounded-xl p-4">
+                  <h3 className="font-semibold text-gray-700 mb-2">Current Settings:</h3>
+                  <p className="text-sm text-gray-600">
+                    Starting Money: <span className="font-bold">${(gameState.settings.startingMoney || 15000).toLocaleString()}</span>
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    Deed Cards: <span className="font-bold">{gameState.settings.deedCardsPerPlayer || 2} per player</span>
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <div className="mt-6 flex gap-3 justify-end">
+              <button
+                onClick={() => setShowSettings(false)}
+                className="bg-gray-400 hover:bg-gray-500 text-white font-bold py-3 px-6 rounded-xl transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleUpdateSettings}
+                className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-xl transition-colors"
+              >
+                Save Settings
               </button>
             </div>
           </div>

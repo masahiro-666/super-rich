@@ -4,6 +4,7 @@ export interface Player {
   balance: number;
   isBank?: boolean;
   color?: string;
+  deedCards?: DeedCard[];
 }
 
 export interface DeedCard {
@@ -30,6 +31,10 @@ export interface GameState {
   bank: Player;
   transactions: Transaction[];
   started: boolean;
+  settings: {
+    startingMoney: number;
+    deedCardsPerPlayer: number;
+  };
 }
 
 export const INITIAL_MONEY = 15000;

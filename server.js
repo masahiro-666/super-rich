@@ -51,6 +51,10 @@ app.prepare().then(() => {
         bank: { id: 'bank', name: 'Bank', balance: 1000000, isBank: true },
         transactions: [],
         started: false,
+        settings: {
+          startingMoney: 15000,
+          deedCardsPerPlayer: 2,
+        },
       };
 
       gameRooms.set(roomCode, gameState);
@@ -83,9 +87,10 @@ app.prepare().then(() => {
       const player = {
         id: socket.id,
         name: playerName,
-        balance: 15000,
+        balance: gameState.settings.startingMoney,
         isBank: false,
         color: null,
+        deedCards: [],
       };
         balance: 15000,
         isBank: false,
@@ -211,10 +216,84 @@ app.prepare().then(() => {
       
       console.log('Players after color assignment:', gameState.players.map(p => ({ name: p.name, color: p.color })));
 
+      // Distribute random deed cards to players
+      const deedCards = [
+        { id: 1, name: "กรุงเทพ", price: 600 },
+        { id: 2, name: "นครปฐม", price: 600 },
+        { id: 3, name: "โรงแรมเซ็นทรัล", price: 2000 },
+        { id: 4, name: "โรงแรมการ์เด็น", price: 2000 },
+        { id: 5, name: "ตลาดโบ้เบ้", price: 1000 },
+        { id: 6, name: "เยาวราช", price: 1000 },
+        { id: 7, name: "จันทบุรี", price: 1200 },
+        { id: 8, name: "กาญจนบุรี", price: 1400 },
+        { id: 9, name: "การไฟฟ้า", price: 1500 },
+        { id: 10, name: "ระยอง", price: 1400 },
+        { id: 11, name: "สุโขทัย", price: 1600 },
+        { id: 12, name: "โรงแรมเอมเมอรัล", price: 2000 },
+        { id: 13, name: "ภูเก็ต", price: 1800 },
+        { id: 14, name: "สุราษฎร์ธานี", price: 1800 },
+        { id: 15, name: "สงขลา", price: 2000 },
+        { id: 16, name: "เพชรบุรี", price: 2200 },
+        { id: 17, name: "เชียงใหม่", price: 2200 },
+        { id: 18, name: "เชียงราย", price: 2400 },
+        { id: 19, name: "แกรนด์จอมเทียน", price: 2000 },
+        { id: 20, name: "แม่ฮ่องสอน", price: 2600 },
+        { id: 21, name: "ลำปาง", price: 2600 },
+        { id: 22, name: "การประปา", price: 1500 },
+        { id: 23, name: "โคราช", price: 2800 },
+        { id: 24, name: "ดรีมเวิลด์", price: 3000 },
+        { id: 25, name: "สุรินทร์", price: 3000 },
+        { id: 26, name: "อุบลราชธานี", price: 3200 },
+        { id: 27, name: "โรงแรมโนโวเทล", price: 2000 },
+        { id: 28, name: "ดอนเมือง", price: 3500 },
+        { id: 29, name: "เสาชิงช้า", price: 4000 },
+      ];
+      
+      // Shuffle deed cards
+      const shuffledDeedCards = [...deedCards].sort(() => Math.random() - 0.5);
+      
+      // Distribute cards to players
+      const cardsPerPlayer = gameState.settings.deedCardsPerPlayer;
+      let cardIndex = 0;
+      
+      gameState.players.forEach((player) => {
+        player.deedCards = [];
+        for (let i = 0; i < cardsPerPlayer && cardIndex < shuffledDeedCards.length; i++) {
+          player.deedCards.push(shuffledDeedCards[cardIndex]);
+          cardIndex++;
+        }
+        console.log(`${player.name} received ${player.deedCards.length} deed cards`);
+      });
+
       gameState.started = true;
       io.to(roomCode).emit('game-started', { gameState });
       
       console.log(`Game started: ${roomCode}`);
+    });
+
+    // Update game settings
+    socket.on('update-settings', ({ roomCode, settings }) => {
+      const gameState = gameRooms.get(roomCode);
+      
+      if (!gameState || gameState.host !== socket.id) {
+        socket.emit('error', { message: 'Not authorized' });
+        return;
+      }
+
+      if (gameState.started) {
+        socket.emit('error', { message: 'Cannot change settings after game started' });
+        return;
+      }
+
+      gameState.settings = settings;
+      
+      // Update all existing players' balance to match new starting money
+      gameState.players.forEach(player => {
+        player.balance = settings.startingMoney;
+      });
+
+      io.to(roomCode).emit('settings-updated', { gameState });
+      console.log(`Settings updated for room ${roomCode}:`, settings);
     });
 
     // Send money transaction
