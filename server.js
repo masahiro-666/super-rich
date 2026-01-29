@@ -94,10 +94,6 @@ app.prepare().then(() => {
         color: null,
         deedCards: [],
       };
-        balance: 15000,
-        isBank: false,
-        color: null,
-      };
 
       gameState.players.push(player);
       socket.join(roomCode);
@@ -254,9 +250,11 @@ app.prepare().then(() => {
       // Shuffle deed cards
       const shuffledDeedCards = [...deedCards].sort(() => Math.random() - 0.5);
       
-      // Distribute cards to players
-      const cardsPerPlayer = gameState.settings.deedCardsPerPlayer;
+      // Distribute cards to players based on settings
+      const cardsPerPlayer = gameState.settings.deedCardsPerPlayer || 0;
       let cardIndex = 0;
+      
+      console.log(`Distributing ${cardsPerPlayer} cards to each of ${gameState.players.length} players from ${shuffledDeedCards.length} total deeds`);
       
       gameState.players.forEach((player) => {
         player.deedCards = [];
@@ -264,7 +262,7 @@ app.prepare().then(() => {
           player.deedCards.push(shuffledDeedCards[cardIndex]);
           cardIndex++;
         }
-        console.log(`${player.name} received ${player.deedCards.length} deed cards`);
+        console.log(`${player.name} received ${player.deedCards.length} deed cards:`, player.deedCards.map(d => d.name));
       });
 
       // Store remaining deeds as available

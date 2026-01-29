@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { io, Socket } from "socket.io-client";
-import { GameState, Player } from "@/types/game";
+import { GameState, Player, DEED_CARDS } from "@/types/game";
 
 let socket: Socket;
 
@@ -28,6 +28,7 @@ export default function PlayerView() {
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [showMyDeeds, setShowMyDeeds] = useState(false);
   const [showAvailableDeeds, setShowAvailableDeeds] = useState(false);
+  const [showAllDeeds, setShowAllDeeds] = useState(false);
   useEffect(() => {
     const role = localStorage.getItem("monopoly-role");
     const savedRoomCode = localStorage.getItem("monopoly-room");
@@ -332,18 +333,24 @@ export default function PlayerView() {
                 <h3 className="text-xl font-bold text-gray-800 mb-4">
                   📜 Deed Cards
                 </h3>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-3 gap-3">
                   <button
                     onClick={() => setShowMyDeeds(true)}
-                    className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-lg transition-colors"
+                    className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-lg transition-colors text-sm"
                   >
                     My Deeds ({currentPlayer.deedCards?.length || 0})
                   </button>
                   <button
                     onClick={() => setShowAvailableDeeds(true)}
-                    className="bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-lg transition-colors"
+                    className="bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-lg transition-colors text-sm"
                   >
-                    Buy Deed
+                    Buy Deed ({gameState.availableDeeds?.length || 0})
+                  </button>
+                  <button
+                    onClick={() => setShowAllDeeds(true)}
+                    className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 rounded-lg transition-colors text-sm"
+                  >
+                    All Deeds
                   </button>
                 </div>
               </div>
@@ -773,6 +780,121 @@ export default function PlayerView() {
                 <p className="text-xl">No deed cards available at the moment</p>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* All Deeds Modal */}
+      {showAllDeeds && (
+        <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center p-4 z-50 animate-fade-in overflow-y-auto">
+          <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-6xl w-full my-8 animate-scale-in">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-3xl font-bold text-gray-800">
+                🏘️ All Deed Cards ({DEED_CARDS.length})
+              </h2>
+              <button
+                onClick={() => setShowAllDeeds(false)}
+                className="text-gray-500 hover:text-gray-700 text-3xl"
+              >
+                ×
+              </button>
+            </div>
+            
+            {/* Summary Stats */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+              <div className="bg-gradient-to-br from-green-100 to-green-200 rounded-xl p-4 text-center">
+                <div className="text-2xl font-bold text-green-700">
+                  {gameState.availableDeeds?.length || 0}
+                </div>
+                <div className="text-sm text-gray-600">Available</div>
+              </div>
+              {gameState.players.map((player) => (
+                <div
+                  key={player.id}
+                  className={`bg-gradient-to-br rounded-xl p-4 text-center ${
+                    player.id === currentPlayer.id
+                      ? "from-blue-100 to-blue-200"
+                      : "from-gray-100 to-gray-200"
+                  }`}
+                >
+                  <div
+                    className={`text-2xl font-bold ${
+                      player.id === currentPlayer.id
+                        ? "text-blue-700"
+                        : "text-gray-700"
+                    }`}
+                  >
+                    {player.deedCards?.length || 0}
+                  </div>
+                  <div className="text-sm text-gray-600 truncate">
+                    {player.name} {player.id === currentPlayer.id ? "(You)" : ""}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* All Deeds Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-[60vh] overflow-y-auto">
+              {DEED_CARDS.map((card) => {
+                // Find owner of this deed
+                const owner = gameState.players.find((p) =>
+                  p.deedCards?.some((d) => d.id === card.id)
+                );
+                const isAvailable = gameState.availableDeeds?.some(
+                  (d) => d.id === card.id
+                );
+                const isOwnedByMe = owner?.id === currentPlayer.id;
+
+                return (
+                  <div
+                    key={card.id}
+                    className={`border-2 rounded-xl p-4 ${
+                      isOwnedByMe
+                        ? "bg-gradient-to-br from-blue-50 to-blue-100 border-blue-300"
+                        : isAvailable
+                        ? "bg-gradient-to-br from-green-50 to-green-100 border-green-300"
+                        : "bg-gradient-to-br from-gray-50 to-gray-100 border-gray-300"
+                    }`}
+                  >
+                    <div className="flex justify-between items-start mb-2">
+                      <span className="text-xs font-bold text-gray-500 bg-white px-2 py-1 rounded">
+                        #{card.id}
+                      </span>
+                      <span className="text-lg font-bold text-green-600">
+                        ${card.price.toLocaleString()}
+                      </span>
+                    </div>
+                    <h3 className="text-lg font-bold text-gray-800 mb-2">
+                      {card.name}
+                    </h3>
+                    <div className="flex items-center gap-2">
+                      {isOwnedByMe ? (
+                        <>
+                          <span className="text-2xl">👤</span>
+                          <span className="text-sm font-bold text-blue-700">
+                            You own this
+                          </span>
+                        </>
+                      ) : owner ? (
+                        <>
+                          <span className="text-2xl">👥</span>
+                          <span className="text-sm font-bold text-gray-700">
+                            Owned by {owner.name}
+                          </span>
+                        </>
+                      ) : isAvailable ? (
+                        <>
+                          <span className="text-2xl">🏪</span>
+                          <span className="text-sm font-bold text-green-700">
+                            Available
+                          </span>
+                        </>
+                      ) : null}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
       )}

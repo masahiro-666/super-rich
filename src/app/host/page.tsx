@@ -429,9 +429,15 @@ export default function Host() {
                 </div>
               )}
 
-              <p className="text-2xl font-bold text-green-600 mb-4">
+              <p className="text-2xl font-bold text-green-600 mb-2">
                 ${player.balance.toLocaleString()}
               </p>
+
+              {gameState.started && (
+                <p className="text-sm text-gray-600 mb-4">
+                  📜 Deeds: {player.deedCards?.length || 0}
+                </p>
+              )}
 
               {gameState.started && (
                 <div className="flex gap-2">

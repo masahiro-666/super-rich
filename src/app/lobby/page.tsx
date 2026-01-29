@@ -98,7 +98,7 @@ export default function Lobby() {
       <div className="min-h-screen bg-gradient-to-br from-green-600 to-emerald-700 flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full">
           <h1 className="text-4xl font-bold text-center mb-2 text-gray-800">
-            Monopoly Money
+            Super Rich
           </h1>
           <p className="text-center text-gray-600 mb-8">
             Multiplayer Banking System
