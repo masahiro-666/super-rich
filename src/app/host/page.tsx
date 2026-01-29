@@ -238,42 +238,45 @@ export default function Host() {
         </div>
 
         {!gameState.started && (
-          <div className="bg-yellow-100 border-2 border-yellow-400 rounded-xl p-6 mb-6">
-            <h2 className="text-xl font-bold text-gray-800 mb-2">
-              Waiting for Players...
-            </h2>
-            <p className="text-gray-700 mb-4">
-              {gameState.players.length} player
-              {gameState.players.length !== 1 ? "s" : ""} joined (min: 2, max:
-              6)
-            </p>
-            {gameState.players.length > 0 && (
-              <div className="mb-4 space-y-2">
-                <p className="font-semibold text-gray-700 text-sm">
-                  Current players:
-                </p>
-                {gameState.players.map((player, index) => (
-                  <div
-                    key={player.id}
-                    className="flex items-center bg-white p-2 rounded"
-                  >
-                    <span className="font-semibold text-gray-800">
-                      {index + 1}. {player.name}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
+          <>
+            <div className="bg-yellow-100 border-2 border-yellow-400 rounded-xl p-6 mb-6">
+              <h2 className="text-xl font-bold text-gray-800 mb-2">
+                Waiting for Players...
+              </h2>
+              <p className="text-gray-700 mb-4">
+                {gameState.players.length} player
+                {gameState.players.length !== 1 ? "s" : ""} joined (min: 2, max:
+                6)
+              </p>
+              {gameState.players.length > 0 && (
+                <div className="space-y-2">
+                  <p className="font-semibold text-gray-700 text-sm">
+                    Current players:
+                  </p>
+                  {gameState.players.map((player, index) => (
+                    <div
+                      key={player.id}
+                      className="flex items-center bg-white p-2 rounded"
+                    >
+                      <span className="font-semibold text-gray-800">
+                        {index + 1}. {player.name}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            
             <button
               onClick={handleStartGame}
               disabled={gameState.players.length < 2}
-              className="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-bold py-3 px-6 rounded-lg transition-colors"
+              className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-bold py-6 px-8 rounded-xl transition-colors shadow-2xl text-2xl mb-6"
             >
-              Start Game{" "}
+              🎮 Start Game{" "}
               {gameState.players.length >= 2 &&
                 `(${gameState.players.length} players)`}
             </button>
-          </div>
+          </>
         )}
 
         {/* Bank Balance */}

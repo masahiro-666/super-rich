@@ -183,6 +183,34 @@ app.prepare().then(() => {
         return;
       }
 
+      // Assign random colors to players who don't have one
+      const availableColors = ["#EC4899", "#FFFFFF", "#000000", "#EF4444", "#10B981", "#3B82F6"];
+      const usedColors = gameState.players
+        .filter(p => p.color)
+        .map(p => p.color);
+      
+      console.log('Players before color assignment:', gameState.players.map(p => ({ name: p.name, color: p.color })));
+      console.log('Used colors:', usedColors);
+      
+      const unassignedPlayers = gameState.players.filter(p => !p.color);
+      console.log('Unassigned players:', unassignedPlayers.map(p => p.name));
+      
+      const remainingColors = availableColors.filter(c => !usedColors.includes(c));
+      console.log('Remaining colors:', remainingColors);
+      
+      unassignedPlayers.forEach((player, index) => {
+        if (remainingColors.length > 0) {
+          // Pick a random color from remaining colors
+          const randomIndex = Math.floor(Math.random() * remainingColors.length);
+          player.color = remainingColors[randomIndex];
+          console.log(`Assigned ${remainingColors[randomIndex]} to ${player.name}`);
+          // Remove the assigned color from remaining colors
+          remainingColors.splice(randomIndex, 1);
+        }
+      });
+      
+      console.log('Players after color assignment:', gameState.players.map(p => ({ name: p.name, color: p.color })));
+
       gameState.started = true;
       io.to(roomCode).emit('game-started', { gameState });
       
