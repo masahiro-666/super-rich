@@ -38,7 +38,9 @@ export default function PlayerView() {
   const [amountHistory, setAmountHistory] = useState<number[]>([]);
   const [showConfirmSellDeed, setShowConfirmSellDeed] = useState(false);
   const [pendingSellDeed, setPendingSellDeed] = useState<any>(null);
-  const [deedFilter, setDeedFilter] = useState<"all" | "available" | "mine" | "others">("all");
+  const [deedFilter, setDeedFilter] = useState<
+    "all" | "available" | "mine" | "others"
+  >("all");
   useEffect(() => {
     const role = localStorage.getItem("monopoly-role");
     const savedRoomCode = localStorage.getItem("monopoly-room");
@@ -227,7 +229,7 @@ export default function PlayerView() {
 
   const confirmSellDeed = () => {
     if (!pendingSellDeed) return;
-    
+
     socket.emit("deed-request", {
       roomCode,
       type: "sell",
@@ -940,7 +942,8 @@ export default function PlayerView() {
               </h3>
             </div>
             <p className="text-lg text-gray-700 mb-6">
-              You will receive ${pendingSellDeed.price.toLocaleString()} from the bank
+              You will receive ${pendingSellDeed.price.toLocaleString()} from
+              the bank
             </p>
             <div className="flex gap-3">
               <button
@@ -1087,7 +1090,11 @@ export default function PlayerView() {
             {/* Summary Stats */}
             <div className="grid grid-cols-3 gap-4 mb-6">
               <button
-                onClick={() => setDeedFilter(deedFilter === "available" ? "all" : "available")}
+                onClick={() =>
+                  setDeedFilter(
+                    deedFilter === "available" ? "all" : "available",
+                  )
+                }
                 className={`bg-gradient-to-br from-green-100 to-green-200 rounded-xl p-4 text-center transition-all hover:scale-105 ${
                   deedFilter === "available" ? "ring-4 ring-green-500" : ""
                 }`}
@@ -1098,7 +1105,9 @@ export default function PlayerView() {
                 <div className="text-sm text-gray-600">Available</div>
               </button>
               <button
-                onClick={() => setDeedFilter(deedFilter === "mine" ? "all" : "mine")}
+                onClick={() =>
+                  setDeedFilter(deedFilter === "mine" ? "all" : "mine")
+                }
                 className={`bg-gradient-to-br from-blue-100 to-blue-200 rounded-xl p-4 text-center transition-all hover:scale-105 ${
                   deedFilter === "mine" ? "ring-4 ring-blue-500" : ""
                 }`}
@@ -1111,14 +1120,16 @@ export default function PlayerView() {
                 </div>
               </button>
               <button
-                onClick={() => setDeedFilter(deedFilter === "others" ? "all" : "others")}
+                onClick={() =>
+                  setDeedFilter(deedFilter === "others" ? "all" : "others")
+                }
                 className={`bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl p-4 text-center transition-all hover:scale-105 ${
                   deedFilter === "others" ? "ring-4 ring-gray-500" : ""
                 }`}
               >
                 <div className="text-2xl font-bold text-gray-700">
                   {gameState.players
-                    .filter(p => p.id !== currentPlayer.id)
+                    .filter((p) => p.id !== currentPlayer.id)
                     .reduce((sum, p) => sum + (p.deedCards?.length || 0), 0)}
                 </div>
                 <div className="text-sm text-gray-600">Others</div>
@@ -1135,7 +1146,7 @@ export default function PlayerView() {
                   (d) => d.id === card.id,
                 );
                 const isOwnedByMe = owner?.id === currentPlayer.id;
-                
+
                 // Apply filter
                 if (deedFilter === "available") return isAvailable;
                 if (deedFilter === "mine") return isOwnedByMe;

@@ -979,11 +979,13 @@ export default function Host() {
                 );
               }).map((card) => {
                 // Find owner
-                const owner = gameState.players.find(p => 
-                  p.deedCards?.some(d => d.id === card.id)
+                const owner = gameState.players.find((p) =>
+                  p.deedCards?.some((d) => d.id === card.id),
                 );
-                const isAvailable = gameState.availableDeeds?.some(d => d.id === card.id);
-                
+                const isAvailable = gameState.availableDeeds?.some(
+                  (d) => d.id === card.id,
+                );
+
                 return (
                   <div
                     key={card.id}
@@ -1010,7 +1012,11 @@ export default function Host() {
                       {owner ? (
                         <div
                           className="flex items-center gap-1 bg-blue-100 text-blue-700 px-2 py-1 rounded"
-                          style={owner.color ? { borderLeft: `3px solid ${owner.color}` } : {}}
+                          style={
+                            owner.color
+                              ? { borderLeft: `3px solid ${owner.color}` }
+                              : {}
+                          }
                         >
                           <span>👤 {owner.name}</span>
                         </div>
