@@ -10,9 +10,9 @@ export default function Lobby() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const roomParam = searchParams?.get("room");
-  
+
   const [mode, setMode] = useState<"select" | "create" | "join">(
-    roomParam ? "join" : "select"
+    roomParam ? "join" : "select",
   );
   const [hostName, setHostName] = useState("");
   const [roomCode, setRoomCode] = useState(roomParam?.toUpperCase() || "");

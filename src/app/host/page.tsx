@@ -61,9 +61,11 @@ export default function Host() {
         margin: 2,
         color: {
           dark: "#059669",
-          light: "#FFFFFF"
-        }
-      }).then(setQrCodeDataUrl).catch(console.error);
+          light: "#FFFFFF",
+        },
+      })
+        .then(setQrCodeDataUrl)
+        .catch(console.error);
     }
 
     setRoomCode(savedRoomCode);
@@ -1254,9 +1256,7 @@ export default function Host() {
         <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center p-4 z-50 animate-fade-in">
           <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full text-center animate-scale-in">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-3xl font-bold text-gray-800">
-                📱 Join Room
-              </h2>
+              <h2 className="text-3xl font-bold text-gray-800">📱 Join Room</h2>
               <button
                 onClick={() => setShowQRCode(false)}
                 className="text-gray-500 hover:text-gray-700 text-3xl"
@@ -1264,7 +1264,7 @@ export default function Host() {
                 ×
               </button>
             </div>
-            
+
             <div className="mb-6">
               <p className="text-gray-600 mb-4">
                 Scan this QR code to join the room:
@@ -1283,9 +1283,7 @@ export default function Host() {
             </div>
 
             <div className="bg-green-50 border-2 border-green-300 rounded-xl p-4 mb-6">
-              <p className="text-sm text-gray-700 mb-2">
-                Room Code:
-              </p>
+              <p className="text-sm text-gray-700 mb-2">Room Code:</p>
               <p className="font-mono text-3xl font-bold text-green-600">
                 {roomCode}
               </p>
