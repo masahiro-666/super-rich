@@ -32,6 +32,13 @@ export default function Host() {
   const [showGiveDeedModal, setShowGiveDeedModal] = useState(false);
   const [selectedDeedToGive, setSelectedDeedToGive] = useState<any>(null);
   const [selectedPlayerForDeed, setSelectedPlayerForDeed] = useState("");
+  const [showConfirmTransaction, setShowConfirmTransaction] = useState(false);
+  const [pendingTransactionTarget, setPendingTransactionTarget] = useState<{
+    playerId: string;
+    playerName: string;
+    type: "send" | "receive";
+  } | null>(null);
+  const [amountHistory, setAmountHistory] = useState<number[]>([]);
 
   useEffect(() => {
     const role = localStorage.getItem("monopoly-role");
@@ -170,9 +177,25 @@ export default function Host() {
   };
 
   const openTransactionModal = (playerId: string, type: "send" | "receive") => {
-    setSelectedPlayerId(playerId);
-    setTransactionType(type);
-    setAmount("");
+    const player = gameState?.players.find(p => p.id === playerId);
+    if (!player) return;
+    
+    setPendingTransactionTarget({
+      playerId: playerId,
+      playerName: player.name,
+      type: type
+    });
+    setShowConfirmTransaction(true);
+  };
+
+  const confirmTransaction = () => {
+    if (!pendingTransactionTarget) return;
+    
+    setSelectedPlayerId(pendingTransactionTarget.playerId);
+    setTransactionType(pendingTransactionTarget.type);
+    setAmount("0");
+    setAmountHistory([]);
+    setShowConfirmTransaction(false);
     setShowTransactionModal(true);
   };
 
@@ -689,6 +712,43 @@ export default function Host() {
         )}
       </div>
 
+      {/* Confirm Transaction Modal */}
+      {showConfirmTransaction && pendingTransactionTarget && (
+        <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center p-4 z-50 animate-fade-in">
+          <div className="bg-white rounded-3xl shadow-2xl p-12 max-w-md w-full text-center animate-scale-in">
+            <div className="text-6xl mb-4">💸</div>
+            <h2 className="text-3xl font-bold text-gray-800 mb-4">
+              {pendingTransactionTarget.type === "send" ? "Send Money?" : "Receive Money?"}
+            </h2>
+            <p className="text-lg text-gray-700 mb-2">
+              {pendingTransactionTarget.type === "send" 
+                ? "Do you want to send money to" 
+                : "Do you want to receive money from"}
+            </p>
+            <p className="text-2xl font-bold text-blue-600 mb-6">
+              {pendingTransactionTarget.playerName}?
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowConfirmTransaction(false);
+                  setPendingTransactionTarget(null);
+                }}
+                className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-3 px-6 rounded-xl transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmTransaction}
+                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-xl transition-colors"
+              >
+                Continue
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Transaction Modal */}
       {showTransactionModal && selectedPlayerId && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
@@ -725,42 +785,101 @@ export default function Host() {
                 Select Bill Amount
               </label>
               <div className="grid grid-cols-3 gap-3 mb-3">
-                {[10, 50, 100, 500, 1000, 5000].map((bill) => (
-                  <button
-                    key={bill}
-                    onClick={() => setAmount(String(bill))}
-                    className={`px-4 py-3 rounded-lg font-bold transition-all ${
-                      amount === String(bill)
-                        ? "bg-green-600 text-white scale-105"
-                        : "bg-gray-200 text-gray-800 hover:bg-gray-300"
-                    }`}
-                  >
-                    ${bill}
-                  </button>
-                ))}
+                {[10, 50, 100, 500, 1000, 5000].map((bill) => {
+                  const currentAmount = parseInt(amount) || 0;
+                  const newAmount = currentAmount + bill;
+                  const player = gameState.players.find((p) => p.id === selectedPlayerId);
+                  const isDisabled = transactionType === "receive" && player && newAmount > player.balance;
+                  
+                  return (
+                    <button
+                      key={bill}
+                      onClick={() => {
+                        if (!isDisabled) {
+                          const newTotal = currentAmount + bill;
+                          setAmount(String(newTotal));
+                          setAmountHistory([...amountHistory, bill]);
+                        }
+                      }}
+                      disabled={isDisabled}
+                      className={`px-4 py-3 rounded-lg font-bold transition-all ${
+                        isDisabled
+                          ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                          : "bg-green-600 text-white hover:bg-green-700"
+                      }`}
+                    >
+                      +${bill}
+                    </button>
+                  );
+                })}
               </div>
-              <div className="text-center text-gray-600 text-sm">
-                Selected:{" "}
-                <span className="font-bold text-lg text-green-600">
-                  ${amount || "0"}
-                </span>
+              
+              {/* Manual Input */}
+              <div className="mb-3">
+                <label className="block text-gray-600 text-sm mb-1">
+                  Or enter amount (min: $10):
+                </label>
+                <input
+                  type="number"
+                  value={amount}
+                  onChange={(e) => {
+                    let val = parseInt(e.target.value) || 0;
+                    // Round to nearest 10
+                    val = Math.floor(val / 10) * 10;
+                    if (val < 0) val = 0;
+                    const player = gameState.players.find((p) => p.id === selectedPlayerId);
+                    if (transactionType === "receive" && player && val > player.balance) {
+                      val = player.balance;
+                    }
+                    setAmount(String(val));
+                    setAmountHistory([]);
+                  }}
+                  className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:outline-none text-lg text-gray-900 font-semibold"
+                  step="10"
+                  min="0"
+                />
               </div>
+
+              <div className="flex gap-2 items-center justify-between">
+                <div className="text-gray-600 text-sm">
+                  Total Amount:
+                </div>
+                <div className="font-bold text-2xl text-green-600">
+                  ${(parseInt(amount) || 0).toLocaleString()}
+                </div>
+              </div>
+              
+              {/* Undo Button */}
+              {amountHistory.length > 0 && (
+                <button
+                  onClick={() => {
+                    const lastAddition = amountHistory[amountHistory.length - 1];
+                    const currentAmount = parseInt(amount) || 0;
+                    setAmount(String(currentAmount - lastAddition));
+                    setAmountHistory(amountHistory.slice(0, -1));
+                  }}
+                  className="w-full mt-3 bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 rounded-lg transition-colors"
+                >
+                  ↶ Undo (Remove ${amountHistory[amountHistory.length - 1]})
+                </button>
+              )}
             </div>
 
             <div className="flex gap-3">
               <button
-                onClick={() => setShowTransactionModal(false)}
+                onClick={() => {
+                  setShowTransactionModal(false);
+                  setAmount("0");
+                  setAmountHistory([]);
+                }}
                 className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-3 rounded-lg"
               >
                 Cancel
               </button>
               <button
                 onClick={handleTransaction}
-                className={`flex-1 ${
-                  transactionType === "send"
-                    ? "bg-green-600 hover:bg-green-700"
-                    : "bg-blue-600 hover:bg-blue-700"
-                } text-white font-semibold py-3 rounded-lg`}
+                disabled={(parseInt(amount) || 0) < 10}
+                className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-lg transition-colors"
               >
                 {transactionType === "send" ? "Send" : "Receive"}
               </button>
