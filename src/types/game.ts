@@ -31,6 +31,15 @@ export interface Transaction {
   timestamp: number;
 }
 
+export interface DeedTransaction {
+  type: "buy" | "sell" | "give";
+  playerId: string;
+  playerName: string;
+  deedCard: DeedCard;
+  price: number;
+  timestamp: number;
+}
+
 export interface GameState {
   roomCode: string;
   host: string;
@@ -39,6 +48,7 @@ export interface GameState {
   players: Player[];
   bank: Player;
   transactions: Transaction[];
+  deedTransactions?: DeedTransaction[];
   started: boolean;
   settings: {
     startingMoney: number;

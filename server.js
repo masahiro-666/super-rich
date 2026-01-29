@@ -50,6 +50,7 @@ app.prepare().then(() => {
         players: [],
         bank: { id: 'bank', name: 'Bank', balance: 1000000, isBank: true },
         transactions: [],
+        deedTransactions: [],
         started: false,
         settings: {
           startingMoney: settings?.startingMoney || 15000,
@@ -421,6 +422,16 @@ app.prepare().then(() => {
               d => d.id !== request.deedCard.id
             );
             
+            // Record deed transaction
+            gameState.deedTransactions.push({
+              type: 'buy',
+              playerId: player.id,
+              playerName: player.name,
+              deedCard: request.deedCard,
+              price: request.deedCard.price,
+              timestamp: Date.now(),
+            });
+            
             console.log(`${player.name} bought ${request.deedCard.name} for $${request.deedCard.price}`);
           } else {
             socket.emit('error', { message: 'Player has insufficient funds' });
@@ -439,6 +450,16 @@ app.prepare().then(() => {
             
             // Add back to available deeds
             gameState.availableDeeds.push(request.deedCard);
+            
+            // Record deed transaction
+            gameState.deedTransactions.push({
+              type: 'sell',
+              playerId: player.id,
+              playerName: player.name,
+              deedCard: request.deedCard,
+              price: request.deedCard.price,
+              timestamp: Date.now(),
+            });
             
             console.log(`${player.name} sold ${request.deedCard.name} for $${request.deedCard.price}`);
           } else {
@@ -481,6 +502,16 @@ app.prepare().then(() => {
       if (!player.deedCards) player.deedCards = [];
       player.deedCards.push(deedCard);
       gameState.availableDeeds.splice(deedIndex, 1);
+      
+      // Record deed transaction
+      gameState.deedTransactions.push({
+        type: 'give',
+        playerId: player.id,
+        playerName: player.name,
+        deedCard: deedCard,
+        price: 0,
+        timestamp: Date.now(),
+      });
 
       io.to(roomCode).emit('game-updated', { gameState });
       console.log(`Bank gave ${deedCard.name} to ${player.name}`);

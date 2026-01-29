@@ -29,6 +29,9 @@ export default function Host() {
   const [startingMoney, setStartingMoney] = useState(15000);
   const [deedCardsPerPlayer, setDeedCardsPerPlayer] = useState(2);
   const [deedSearchQuery, setDeedSearchQuery] = useState("");
+  const [showGiveDeedModal, setShowGiveDeedModal] = useState(false);
+  const [selectedDeedToGive, setSelectedDeedToGive] = useState<any>(null);
+  const [selectedPlayerForDeed, setSelectedPlayerForDeed] = useState("");
 
   useEffect(() => {
     const role = localStorage.getItem("monopoly-role");
@@ -559,26 +562,15 @@ export default function Host() {
                     <h4 className="font-bold text-gray-800 text-sm mb-2">
                       {deed.name}
                     </h4>
-                    <select
-                      onChange={(e) => {
-                        if (e.target.value) {
-                          socket.emit("bank-give-deed", {
-                            roomCode,
-                            playerId: e.target.value,
-                            deedCard: deed,
-                          });
-                          e.target.value = "";
-                        }
+                    <button
+                      onClick={() => {
+                        setSelectedDeedToGive(deed);
+                        setShowGiveDeedModal(true);
                       }}
-                      className="w-full text-sm px-2 py-1 border border-gray-300 rounded"
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold py-2 rounded transition-colors"
                     >
-                      <option value="">Give to player...</option>
-                      {gameState.players.map((player) => (
-                        <option key={player.id} value={player.id}>
-                          {player.name}
-                        </option>
-                      ))}
-                    </select>
+                      Give to Player
+                    </button>
                   </div>
                 ))}
               </div>
@@ -592,9 +584,9 @@ export default function Host() {
 
         {/* Transaction History */}
         {gameState.started && (
-          <div className="bg-white rounded-xl shadow-xl p-6">
+          <div className="bg-white rounded-xl shadow-xl p-6 mb-6">
             <h3 className="text-xl font-bold text-gray-800 mb-4">
-              Transaction History
+              💰 Money Transactions
             </h3>
             <div className="space-y-2 max-h-96 overflow-y-auto">
               {gameState.transactions
@@ -622,6 +614,63 @@ export default function Host() {
               {gameState.transactions.length === 0 && (
                 <p className="text-gray-500 text-center py-4">
                   No transactions yet
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Deed Transaction History */}
+        {gameState.started && gameState.deedTransactions && (
+          <div className="bg-white rounded-xl shadow-xl p-6">
+            <h3 className="text-xl font-bold text-gray-800 mb-4">
+              📜 Deed Transactions
+            </h3>
+            <div className="space-y-2 max-h-96 overflow-y-auto">
+              {gameState.deedTransactions
+                .slice(-20)
+                .reverse()
+                .map((transaction, index) => (
+                  <div
+                    key={index}
+                    className={`p-3 rounded-lg text-sm ${
+                      transaction.type === 'buy'
+                        ? 'bg-green-50 border-l-4 border-green-500'
+                        : transaction.type === 'sell'
+                        ? 'bg-red-50 border-l-4 border-red-500'
+                        : 'bg-blue-50 border-l-4 border-blue-500'
+                    }`}
+                  >
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <span className="font-semibold text-gray-800">
+                          {transaction.playerName}
+                        </span>
+                        <span className="text-gray-600">
+                          {transaction.type === 'buy' ? ' bought ' : transaction.type === 'sell' ? ' sold ' : ' received '}
+                        </span>
+                        <span className="font-semibold text-gray-800">
+                          {transaction.deedCard.name}
+                        </span>
+                        {transaction.type !== 'give' && (
+                          <span className="text-gray-600">
+                            {transaction.type === 'buy' ? ' from Bank' : ' to Bank'}
+                          </span>
+                        )}
+                      </div>
+                      {transaction.price > 0 && (
+                        <span className={`font-bold ${
+                          transaction.type === 'buy' ? 'text-red-600' : 'text-green-600'
+                        }`}>
+                          {transaction.type === 'buy' ? '-' : '+'}${transaction.price.toLocaleString()}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              {gameState.deedTransactions.length === 0 && (
+                <p className="text-gray-500 text-center py-4">
+                  No deed transactions yet
                 </p>
               )}
             </div>
@@ -914,6 +963,80 @@ export default function Host() {
                 className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-xl transition-colors"
               >
                 Save Settings
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Give Deed Confirmation Modal */}
+      {showGiveDeedModal && selectedDeedToGive && (
+        <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center p-4 z-50 animate-fade-in">
+          <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full animate-scale-in">
+            <h2 className="text-2xl font-bold text-gray-800 mb-4">
+              🏛️ Give Deed to Player
+            </h2>
+            
+            <div className="bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-300 rounded-xl p-4 mb-6">
+              <div className="flex justify-between items-start mb-2">
+                <span className="text-xs font-bold text-gray-500 bg-white px-2 py-1 rounded">
+                  #{selectedDeedToGive.id}
+                </span>
+                <span className="text-lg font-bold text-green-600">
+                  ${selectedDeedToGive.price.toLocaleString()}
+                </span>
+              </div>
+              <h3 className="text-xl font-bold text-gray-800">
+                {selectedDeedToGive.name}
+              </h3>
+            </div>
+
+            <div className="mb-6">
+              <label className="block text-gray-700 font-semibold mb-2">
+                Select Player:
+              </label>
+              <select
+                value={selectedPlayerForDeed}
+                onChange={(e) => setSelectedPlayerForDeed(e.target.value)}
+                className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:border-blue-500 focus:outline-none text-lg text-gray-900 font-semibold"
+              >
+                <option value="">Choose a player...</option>
+                {gameState?.players.map((player) => (
+                  <option key={player.id} value={player.id}>
+                    {player.name} (Balance: ${player.balance.toLocaleString()})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowGiveDeedModal(false);
+                  setSelectedDeedToGive(null);
+                  setSelectedPlayerForDeed("");
+                }}
+                className="flex-1 bg-gray-400 hover:bg-gray-500 text-white font-bold py-3 px-6 rounded-xl transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  if (selectedPlayerForDeed) {
+                    socket.emit("bank-give-deed", {
+                      roomCode,
+                      playerId: selectedPlayerForDeed,
+                      deedCard: selectedDeedToGive,
+                    });
+                    setShowGiveDeedModal(false);
+                    setSelectedDeedToGive(null);
+                    setSelectedPlayerForDeed("");
+                  }
+                }}
+                disabled={!selectedPlayerForDeed}
+                className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-bold py-3 px-6 rounded-xl transition-colors"
+              >
+                Confirm Give
               </button>
             </div>
           </div>
