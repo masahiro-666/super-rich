@@ -15,7 +15,7 @@ export interface DeedCard {
 
 export interface DeedRequest {
   id: string;
-  type: 'buy' | 'sell';
+  type: "buy" | "sell";
   playerId: string;
   playerName: string;
   deedCard: DeedCard;

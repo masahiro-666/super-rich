@@ -25,7 +25,8 @@ export default function PlayerView() {
   const [showError, setShowError] = useState(false);
   const [showWarning, setShowWarning] = useState(false);
   const [warningMessage, setWarningMessage] = useState("");
-  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);  const [showMyDeeds, setShowMyDeeds] = useState(false);
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
+  const [showMyDeeds, setShowMyDeeds] = useState(false);
   const [showAvailableDeeds, setShowAvailableDeeds] = useState(false);
   useEffect(() => {
     const role = localStorage.getItem("monopoly-role");
@@ -179,8 +180,8 @@ export default function PlayerView() {
     setShowLeaveConfirm(true);
   };
 
-  const handleDeedRequest = (type: 'buy' | 'sell', deedCard: any) => {
-    socket.emit('deed-request', {
+  const handleDeedRequest = (type: "buy" | "sell", deedCard: any) => {
+    socket.emit("deed-request", {
       roomCode,
       type,
       deedCard,
@@ -328,7 +329,9 @@ export default function PlayerView() {
             <>
               {/* Deed Management */}
               <div className="bg-white rounded-xl shadow-xl p-6 mb-6">
-                <h3 className="text-xl font-bold text-gray-800 mb-4">📜 Deed Cards</h3>
+                <h3 className="text-xl font-bold text-gray-800 mb-4">
+                  📜 Deed Cards
+                </h3>
                 <div className="grid grid-cols-2 gap-3">
                   <button
                     onClick={() => setShowMyDeeds(true)}
@@ -674,7 +677,9 @@ export default function PlayerView() {
         <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center p-4 z-50 animate-fade-in overflow-y-auto">
           <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-4xl w-full my-8 animate-scale-in">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-3xl font-bold text-gray-800">📜 My Deed Cards</h2>
+              <h2 className="text-3xl font-bold text-gray-800">
+                📜 My Deed Cards
+              </h2>
               <button
                 onClick={() => setShowMyDeeds(false)}
                 className="text-gray-500 hover:text-gray-700 text-3xl"
@@ -697,9 +702,11 @@ export default function PlayerView() {
                         ${card.price.toLocaleString()}
                       </span>
                     </div>
-                    <h3 className="text-lg font-bold text-gray-800 mb-3">{card.name}</h3>
+                    <h3 className="text-lg font-bold text-gray-800 mb-3">
+                      {card.name}
+                    </h3>
                     <button
-                      onClick={() => handleDeedRequest('sell', card)}
+                      onClick={() => handleDeedRequest("sell", card)}
                       className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition-colors"
                     >
                       Sell to Bank
@@ -721,7 +728,9 @@ export default function PlayerView() {
         <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center p-4 z-50 animate-fade-in overflow-y-auto">
           <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-4xl w-full my-8 animate-scale-in">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-3xl font-bold text-gray-800">🏪 Available Deed Cards</h2>
+              <h2 className="text-3xl font-bold text-gray-800">
+                🏪 Available Deed Cards
+              </h2>
               <button
                 onClick={() => setShowAvailableDeeds(false)}
                 className="text-gray-500 hover:text-gray-700 text-3xl"
@@ -744,13 +753,17 @@ export default function PlayerView() {
                         ${card.price.toLocaleString()}
                       </span>
                     </div>
-                    <h3 className="text-lg font-bold text-gray-800 mb-3">{card.name}</h3>
+                    <h3 className="text-lg font-bold text-gray-800 mb-3">
+                      {card.name}
+                    </h3>
                     <button
-                      onClick={() => handleDeedRequest('buy', card)}
+                      onClick={() => handleDeedRequest("buy", card)}
                       disabled={currentPlayer.balance < card.price}
                       className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-bold py-2 px-4 rounded-lg transition-colors"
                     >
-                      {currentPlayer.balance < card.price ? 'Insufficient Funds' : 'Request to Buy'}
+                      {currentPlayer.balance < card.price
+                        ? "Insufficient Funds"
+                        : "Request to Buy"}
                     </button>
                   </div>
                 ))}

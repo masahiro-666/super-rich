@@ -28,12 +28,12 @@ export default function Lobby() {
     const socket = initSocket();
 
     const bankerName = "Banker";
-    socket.emit("create-game", { 
+    socket.emit("create-game", {
       hostName: bankerName,
       settings: {
         startingMoney,
         deedCardsPerPlayer,
-      }
+      },
     });
 
     socket.once("game-created", ({ roomCode, gameState }) => {
@@ -173,7 +173,9 @@ export default function Lobby() {
               <input
                 type="number"
                 value={startingMoney}
-                onChange={(e) => setStartingMoney(parseInt(e.target.value) || 0)}
+                onChange={(e) =>
+                  setStartingMoney(parseInt(e.target.value) || 0)
+                }
                 className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:outline-none text-gray-900 font-semibold"
                 min="0"
                 step="100"
@@ -191,7 +193,9 @@ export default function Lobby() {
               <input
                 type="number"
                 value={deedCardsPerPlayer}
-                onChange={(e) => setDeedCardsPerPlayer(parseInt(e.target.value) || 0)}
+                onChange={(e) =>
+                  setDeedCardsPerPlayer(parseInt(e.target.value) || 0)
+                }
                 className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:outline-none text-gray-900 font-semibold"
                 min="0"
                 max="10"

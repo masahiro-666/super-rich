@@ -463,44 +463,65 @@ export default function Host() {
         </div>
 
         {/* Deed Requests */}
-        {gameState.started && gameState.deedRequests && gameState.deedRequests.length > 0 && (
-          <div className="bg-white rounded-xl shadow-xl p-6 mb-6">
-            <h3 className="text-xl font-bold text-gray-800 mb-4">📋 Pending Deed Requests</h3>
-            <div className="space-y-3">
-              {gameState.deedRequests.map((request) => (
-                <div key={request.id} className="border-2 border-gray-200 rounded-lg p-4">
-                  <div className="flex justify-between items-start mb-2">
-                    <div>
-                      <p className="font-bold text-gray-800">{request.playerName}</p>
-                      <p className="text-sm text-gray-600">
-                        Wants to <span className="font-semibold">{request.type}</span>: {request.deedCard.name}
-                      </p>
-                      <p className="text-lg font-bold text-green-600">${request.deedCard.price.toLocaleString()}</p>
+        {gameState.started &&
+          gameState.deedRequests &&
+          gameState.deedRequests.length > 0 && (
+            <div className="bg-white rounded-xl shadow-xl p-6 mb-6">
+              <h3 className="text-xl font-bold text-gray-800 mb-4">
+                📋 Pending Deed Requests
+              </h3>
+              <div className="space-y-3">
+                {gameState.deedRequests.map((request) => (
+                  <div
+                    key={request.id}
+                    className="border-2 border-gray-200 rounded-lg p-4"
+                  >
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <p className="font-bold text-gray-800">
+                          {request.playerName}
+                        </p>
+                        <p className="text-sm text-gray-600">
+                          Wants to{" "}
+                          <span className="font-semibold">{request.type}</span>:{" "}
+                          {request.deedCard.name}
+                        </p>
+                        <p className="text-lg font-bold text-green-600">
+                          ${request.deedCard.price.toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex gap-2 mt-3">
+                      <button
+                        onClick={() => {
+                          socket.emit("confirm-deed-request", {
+                            roomCode,
+                            requestId: request.id,
+                            approved: true,
+                          });
+                        }}
+                        className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded-lg"
+                      >
+                        ✓ Approve
+                      </button>
+                      <button
+                        onClick={() => {
+                          socket.emit("confirm-deed-request", {
+                            roomCode,
+                            requestId: request.id,
+                            approved: false,
+                          });
+                        }}
+                        className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 rounded-lg"
+                      >
+                        ✗ Reject
+                      </button>
                     </div>
                   </div>
-                  <div className="flex gap-2 mt-3">
-                    <button
-                      onClick={() => {
-                        socket.emit('confirm-deed-request', { roomCode, requestId: request.id, approved: true });
-                      }}
-                      className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded-lg"
-                    >
-                      ✓ Approve
-                    </button>
-                    <button
-                      onClick={() => {
-                        socket.emit('confirm-deed-request', { roomCode, requestId: request.id, approved: false });
-                      }}
-                      className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 rounded-lg"
-                    >
-                      ✗ Reject
-                    </button>
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
         {/* Available Deeds - Bank can give to players */}
         {gameState.started && (
@@ -511,31 +532,48 @@ export default function Host() {
             {gameState.availableDeeds && gameState.availableDeeds.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-96 overflow-y-auto">
                 {gameState.availableDeeds.map((deed) => (
-                  <div key={deed.id} className="bg-gradient-to-br from-green-50 to-blue-50 border-2 border-gray-200 rounded-lg p-3">
+                  <div
+                    key={deed.id}
+                    className="bg-gradient-to-br from-green-50 to-blue-50 border-2 border-gray-200 rounded-lg p-3"
+                  >
                     <div className="flex justify-between items-start mb-2">
-                      <span className="text-xs font-bold text-gray-500 bg-white px-2 py-1 rounded">#{deed.id}</span>
-                      <span className="text-sm font-bold text-green-600">${deed.price.toLocaleString()}</span>
+                      <span className="text-xs font-bold text-gray-500 bg-white px-2 py-1 rounded">
+                        #{deed.id}
+                      </span>
+                      <span className="text-sm font-bold text-green-600">
+                        ${deed.price.toLocaleString()}
+                      </span>
                     </div>
-                    <h4 className="font-bold text-gray-800 text-sm mb-2">{deed.name}</h4>
+                    <h4 className="font-bold text-gray-800 text-sm mb-2">
+                      {deed.name}
+                    </h4>
                     <select
                       onChange={(e) => {
                         if (e.target.value) {
-                          socket.emit('bank-give-deed', { roomCode, playerId: e.target.value, deedCard: deed });
-                          e.target.value = '';
+                          socket.emit("bank-give-deed", {
+                            roomCode,
+                            playerId: e.target.value,
+                            deedCard: deed,
+                          });
+                          e.target.value = "";
                         }
                       }}
                       className="w-full text-sm px-2 py-1 border border-gray-300 rounded"
                     >
                       <option value="">Give to player...</option>
                       {gameState.players.map((player) => (
-                        <option key={player.id} value={player.id}>{player.name}</option>
+                        <option key={player.id} value={player.id}>
+                          {player.name}
+                        </option>
                       ))}
                     </select>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-gray-500 text-center py-4">All deeds have been distributed</p>
+              <p className="text-gray-500 text-center py-4">
+                All deeds have been distributed
+              </p>
             )}
           </div>
         )}
