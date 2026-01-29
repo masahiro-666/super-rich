@@ -177,20 +177,20 @@ export default function Host() {
   };
 
   const openTransactionModal = (playerId: string, type: "send" | "receive") => {
-    const player = gameState?.players.find(p => p.id === playerId);
+    const player = gameState?.players.find((p) => p.id === playerId);
     if (!player) return;
-    
+
     setPendingTransactionTarget({
       playerId: playerId,
       playerName: player.name,
-      type: type
+      type: type,
     });
     setShowConfirmTransaction(true);
   };
 
   const confirmTransaction = () => {
     if (!pendingTransactionTarget) return;
-    
+
     setSelectedPlayerId(pendingTransactionTarget.playerId);
     setTransactionType(pendingTransactionTarget.type);
     setAmount("0");
@@ -718,11 +718,13 @@ export default function Host() {
           <div className="bg-white rounded-3xl shadow-2xl p-12 max-w-md w-full text-center animate-scale-in">
             <div className="text-6xl mb-4">💸</div>
             <h2 className="text-3xl font-bold text-gray-800 mb-4">
-              {pendingTransactionTarget.type === "send" ? "Send Money?" : "Receive Money?"}
+              {pendingTransactionTarget.type === "send"
+                ? "Send Money?"
+                : "Receive Money?"}
             </h2>
             <p className="text-lg text-gray-700 mb-2">
-              {pendingTransactionTarget.type === "send" 
-                ? "Do you want to send money to" 
+              {pendingTransactionTarget.type === "send"
+                ? "Do you want to send money to"
                 : "Do you want to receive money from"}
             </p>
             <p className="text-2xl font-bold text-blue-600 mb-6">
@@ -788,9 +790,14 @@ export default function Host() {
                 {[10, 50, 100, 500, 1000, 5000].map((bill) => {
                   const currentAmount = parseInt(amount) || 0;
                   const newAmount = currentAmount + bill;
-                  const player = gameState.players.find((p) => p.id === selectedPlayerId);
-                  const isDisabled = transactionType === "receive" && player && newAmount > player.balance;
-                  
+                  const player = gameState.players.find(
+                    (p) => p.id === selectedPlayerId,
+                  );
+                  const isDisabled =
+                    transactionType === "receive" &&
+                    player &&
+                    newAmount > player.balance;
+
                   return (
                     <button
                       key={bill}
@@ -813,7 +820,7 @@ export default function Host() {
                   );
                 })}
               </div>
-              
+
               {/* Manual Input */}
               <div className="mb-3">
                 <label className="block text-gray-600 text-sm mb-1">
@@ -827,8 +834,14 @@ export default function Host() {
                     // Round to nearest 10
                     val = Math.floor(val / 10) * 10;
                     if (val < 0) val = 0;
-                    const player = gameState.players.find((p) => p.id === selectedPlayerId);
-                    if (transactionType === "receive" && player && val > player.balance) {
+                    const player = gameState.players.find(
+                      (p) => p.id === selectedPlayerId,
+                    );
+                    if (
+                      transactionType === "receive" &&
+                      player &&
+                      val > player.balance
+                    ) {
                       val = player.balance;
                     }
                     setAmount(String(val));
@@ -841,19 +854,18 @@ export default function Host() {
               </div>
 
               <div className="flex gap-2 items-center justify-between">
-                <div className="text-gray-600 text-sm">
-                  Total Amount:
-                </div>
+                <div className="text-gray-600 text-sm">Total Amount:</div>
                 <div className="font-bold text-2xl text-green-600">
                   ${(parseInt(amount) || 0).toLocaleString()}
                 </div>
               </div>
-              
+
               {/* Undo Button */}
               {amountHistory.length > 0 && (
                 <button
                   onClick={() => {
-                    const lastAddition = amountHistory[amountHistory.length - 1];
+                    const lastAddition =
+                      amountHistory[amountHistory.length - 1];
                     const currentAmount = parseInt(amount) || 0;
                     setAmount(String(currentAmount - lastAddition));
                     setAmountHistory(amountHistory.slice(0, -1));

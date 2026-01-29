@@ -149,21 +149,22 @@ export default function PlayerView() {
   };
 
   const openTransactionModal = (targetId: string, type: "player" | "bank") => {
-    const targetName = type === "bank" 
-      ? "Bank" 
-      : gameState?.players.find(p => p.id === targetId)?.name || "";
-    
+    const targetName =
+      type === "bank"
+        ? "Bank"
+        : gameState?.players.find((p) => p.id === targetId)?.name || "";
+
     setPendingTransactionTarget({
       id: targetId,
       type: type,
-      name: targetName
+      name: targetName,
     });
     setShowConfirmTransaction(true);
   };
 
   const confirmTransaction = () => {
     if (!pendingTransactionTarget) return;
-    
+
     setSelectedPlayerId(pendingTransactionTarget.id);
     setTransactionType(pendingTransactionTarget.type);
     setAmount("0");
@@ -615,7 +616,7 @@ export default function PlayerView() {
                     const currentAmount = parseInt(amount) || 0;
                     const newAmount = currentAmount + bill;
                     const isDisabled = newAmount > currentPlayer.balance;
-                    
+
                     return (
                       <button
                         key={bill}
@@ -638,7 +639,7 @@ export default function PlayerView() {
                     );
                   })}
                 </div>
-                
+
                 {/* Manual Input */}
                 <div className="mb-3">
                   <label className="block text-gray-600 text-sm mb-1">
@@ -652,7 +653,8 @@ export default function PlayerView() {
                       // Round to nearest 10
                       val = Math.floor(val / 10) * 10;
                       if (val < 0) val = 0;
-                      if (val > currentPlayer.balance) val = currentPlayer.balance;
+                      if (val > currentPlayer.balance)
+                        val = currentPlayer.balance;
                       setAmount(String(val));
                       setAmountHistory([]);
                     }}
@@ -663,19 +665,18 @@ export default function PlayerView() {
                 </div>
 
                 <div className="flex gap-2 items-center justify-between">
-                  <div className="text-gray-600 text-sm">
-                    Total Amount:
-                  </div>
+                  <div className="text-gray-600 text-sm">Total Amount:</div>
                   <div className="font-bold text-2xl text-blue-600">
                     ${(parseInt(amount) || 0).toLocaleString()}
                   </div>
                 </div>
-                
+
                 {/* Undo Button */}
                 {amountHistory.length > 0 && (
                   <button
                     onClick={() => {
-                      const lastAddition = amountHistory[amountHistory.length - 1];
+                      const lastAddition =
+                        amountHistory[amountHistory.length - 1];
                       const currentAmount = parseInt(amount) || 0;
                       setAmount(String(currentAmount - lastAddition));
                       setAmountHistory(amountHistory.slice(0, -1));
