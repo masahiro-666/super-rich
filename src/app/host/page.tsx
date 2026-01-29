@@ -634,11 +634,11 @@ export default function Host() {
                   <div
                     key={index}
                     className={`p-3 rounded-lg text-sm ${
-                      transaction.type === 'buy'
-                        ? 'bg-green-50 border-l-4 border-green-500'
-                        : transaction.type === 'sell'
-                        ? 'bg-red-50 border-l-4 border-red-500'
-                        : 'bg-blue-50 border-l-4 border-blue-500'
+                      transaction.type === "buy"
+                        ? "bg-green-50 border-l-4 border-green-500"
+                        : transaction.type === "sell"
+                          ? "bg-red-50 border-l-4 border-red-500"
+                          : "bg-blue-50 border-l-4 border-blue-500"
                     }`}
                   >
                     <div className="flex justify-between items-start">
@@ -647,22 +647,33 @@ export default function Host() {
                           {transaction.playerName}
                         </span>
                         <span className="text-gray-600">
-                          {transaction.type === 'buy' ? ' bought ' : transaction.type === 'sell' ? ' sold ' : ' received '}
+                          {transaction.type === "buy"
+                            ? " bought "
+                            : transaction.type === "sell"
+                              ? " sold "
+                              : " received "}
                         </span>
                         <span className="font-semibold text-gray-800">
                           {transaction.deedCard.name}
                         </span>
-                        {transaction.type !== 'give' && (
+                        {transaction.type !== "give" && (
                           <span className="text-gray-600">
-                            {transaction.type === 'buy' ? ' from Bank' : ' to Bank'}
+                            {transaction.type === "buy"
+                              ? " from Bank"
+                              : " to Bank"}
                           </span>
                         )}
                       </div>
                       {transaction.price > 0 && (
-                        <span className={`font-bold ${
-                          transaction.type === 'buy' ? 'text-red-600' : 'text-green-600'
-                        }`}>
-                          {transaction.type === 'buy' ? '-' : '+'}${transaction.price.toLocaleString()}
+                        <span
+                          className={`font-bold ${
+                            transaction.type === "buy"
+                              ? "text-red-600"
+                              : "text-green-600"
+                          }`}
+                        >
+                          {transaction.type === "buy" ? "-" : "+"}$
+                          {transaction.price.toLocaleString()}
                         </span>
                       )}
                     </div>
@@ -976,7 +987,7 @@ export default function Host() {
             <h2 className="text-2xl font-bold text-gray-800 mb-4">
               🏛️ Give Deed to Player
             </h2>
-            
+
             <div className="bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-300 rounded-xl p-4 mb-6">
               <div className="flex justify-between items-start mb-2">
                 <span className="text-xs font-bold text-gray-500 bg-white px-2 py-1 rounded">
