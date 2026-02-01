@@ -1033,59 +1033,77 @@ export default function Host() {
                     <h3 className="text-lg font-bold text-gray-800 mb-2">
                       {card.name}
                     </h3>
-                    
+
                     {/* Rent Details */}
                     <div className="bg-white rounded-lg p-2 mb-2 text-xs space-y-0.5">
                       {card.landRent && (
                         <div className="flex justify-between">
                           <span className="text-gray-600">🏞️ ที่ดิน:</span>
-                          <span className="font-semibold text-gray-800">${card.landRent.toLocaleString()}</span>
+                          <span className="font-semibold text-gray-800">
+                            ${card.landRent.toLocaleString()}
+                          </span>
                         </div>
                       )}
                       {card.rent1House && (
                         <div className="flex justify-between">
                           <span className="text-gray-600">🏠 1 หลัง:</span>
-                          <span className="font-semibold text-gray-800">${card.rent1House.toLocaleString()}</span>
+                          <span className="font-semibold text-gray-800">
+                            ${card.rent1House.toLocaleString()}
+                          </span>
                         </div>
                       )}
                       {card.rent2Houses && (
                         <div className="flex justify-between">
                           <span className="text-gray-600">🏠🏠 2 หลัง:</span>
-                          <span className="font-semibold text-gray-800">${card.rent2Houses.toLocaleString()}</span>
+                          <span className="font-semibold text-gray-800">
+                            ${card.rent2Houses.toLocaleString()}
+                          </span>
                         </div>
                       )}
                       {card.rent3Houses && (
                         <div className="flex justify-between">
                           <span className="text-gray-600">🏠🏠🏠 3 หลัง:</span>
-                          <span className="font-semibold text-gray-800">${card.rent3Houses.toLocaleString()}</span>
+                          <span className="font-semibold text-gray-800">
+                            ${card.rent3Houses.toLocaleString()}
+                          </span>
                         </div>
                       )}
                       {card.rent4Houses && (
                         <div className="flex justify-between">
-                          <span className="text-gray-600">🏠🏠🏠🏠 4 หลัง:</span>
-                          <span className="font-semibold text-gray-800">${card.rent4Houses.toLocaleString()}</span>
+                          <span className="text-gray-600">
+                            🏠🏠🏠🏠 4 หลัง:
+                          </span>
+                          <span className="font-semibold text-gray-800">
+                            ${card.rent4Houses.toLocaleString()}
+                          </span>
                         </div>
                       )}
                       {card.rentHotel && (
                         <div className="flex justify-between">
                           <span className="text-gray-600">🏨 โรงแรม:</span>
-                          <span className="font-semibold text-blue-700">${card.rentHotel.toLocaleString()}</span>
+                          <span className="font-semibold text-blue-700">
+                            ${card.rentHotel.toLocaleString()}
+                          </span>
                         </div>
                       )}
                       {card.houseCost && (
                         <div className="flex justify-between border-t pt-0.5 mt-1">
                           <span className="text-gray-600">💰 ซื้อบ้าน:</span>
-                          <span className="font-semibold text-green-600">${card.houseCost.toLocaleString()}</span>
+                          <span className="font-semibold text-green-600">
+                            ${card.houseCost.toLocaleString()}
+                          </span>
                         </div>
                       )}
                       {card.hotelCost && (
                         <div className="flex justify-between">
                           <span className="text-gray-600">💰 ซื้อโรงแรม:</span>
-                          <span className="font-semibold text-green-600">${card.hotelCost.toLocaleString()}</span>
+                          <span className="font-semibold text-green-600">
+                            ${card.hotelCost.toLocaleString()}
+                          </span>
                         </div>
                       )}
                     </div>
-                    
+
                     <div className="text-xs font-semibold">
                       {owner ? (
                         <div
