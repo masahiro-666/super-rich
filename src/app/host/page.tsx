@@ -110,6 +110,8 @@ export default function Host() {
 
     socket.on("game-started", ({ gameState }) => {
       setGameState(gameState);
+      // Redirect to monopoly game
+      router.push("/monopoly");
     });
 
     socket.on("settings-updated", ({ gameState }) => {

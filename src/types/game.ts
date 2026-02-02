@@ -5,12 +5,30 @@ export interface Player {
   isBank?: boolean;
   color?: string;
   deedCards?: DeedCard[];
+  position?: number;  // Current position on board (0-39)
+  inJail?: boolean;
+  jailTurns?: number; // Turns left in jail
+  hasGetOutOfJailCard?: boolean;
+  chanceCards?: ChanceCard[]; // Chance cards player owns
+  turnOrderRoll?: number; // Initial dice roll for turn order
+  turnOrder?: number; // Final turn order (1, 2, 3, etc.)
 }
 
 export interface DeedCard {
   id: number;
   name: string;
   price: number;
+  rent?: number;
+  rentWithHouse1?: number;
+  rentWithHouse2?: number;
+  rentWithHouse3?: number;
+  rentWithHouse4?: number;
+  rentWithHotel?: number;
+  housePrice?: number;
+  owner?: string | null; // Player ID who owns this property
+  houses?: number; // 0-4 houses
+  hasHotel?: boolean;
+  color?: string; // Color group for monopoly sets
 }
 
 export interface DeedRequest {
@@ -40,6 +58,25 @@ export interface DeedTransaction {
   timestamp: number;
 }
 
+export interface BoardSpace {
+  id: number;
+  name: string;
+  type: "start" | "city" | "chance" | "tax" | "jail" | "free" | "gotoJail" | "utility" | "station";
+  price?: number;
+  rent?: number;
+  color?: string; // For property sets
+  property?: DeedCard; // Full property details if type is "city"
+}
+
+export interface ChanceCard {
+  id: number;
+  text: string;
+  type: "money" | "move" | "jail" | "repair";
+  amount?: number;
+  position?: number;
+  isGetOutOfJail?: boolean;
+}
+
 export interface GameState {
   roomCode: string;
   host: string;
@@ -56,6 +93,13 @@ export interface GameState {
   };
   availableDeeds?: DeedCard[];
   deedRequests?: DeedRequest[];
+  currentPlayerIndex?: number; // Who's turn is it
+  board?: BoardSpace[]; // The 40 spaces on the board
+  diceRoll?: number[]; // Last dice roll [die1, die2]
+  chanceCards?: ChanceCard[];
+  properties?: DeedCard[]; // All properties in the game
+  waitingForTurnOrder?: boolean; // Are we waiting for players to roll for turn order
+  playersRolledForOrder?: string[]; // Players who have rolled for turn order
 }
 
 export const INITIAL_MONEY = 15000;

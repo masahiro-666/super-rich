@@ -93,6 +93,8 @@ export default function PlayerView() {
         (p: { id: string }) => p.id === socket.id,
       );
       setCurrentPlayer(player || null);
+      // Redirect to monopoly game
+      router.push("/monopoly");
     });
 
     socket.on("game-updated", ({ gameState }) => {
